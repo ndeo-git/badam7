@@ -3,7 +3,8 @@
 <title>Satti Lavani</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <style>
 /* VOICE: warm family card night after dinner, playful but tidy
    IDEA: the velvet satti board laid on the floor mat, rows growing out from the sevens
@@ -101,7 +102,7 @@ form{display:flex;gap:8px}form input{flex:1}
 <div id="log"></div>
 <div id="hand" class="hand"></div>
 <div id="mid"></div>
-<section id="invite" class="panel" hidden><h2>Invite the family</h2><p class="note">Send this link. Anyone who opens it can join — no account needed.</p><p id="ilink" class="ilink"></p><div class="btns"><a id="wa" class="btn" target="_blank" rel="noopener">Send on WhatsApp</a><button type="button" class="alt" data-a="copy">Copy link</button></div></section>
+<section id="invite" class="panel" hidden><h2>Invite the family</h2><p class="note">Send this link. Anyone who opens it can join — no account needed. Anyone at the table can share it.</p><p id="ilink" class="ilink"></p><div class="btns"><a id="wa" class="btn" target="_blank" rel="noopener">Send on WhatsApp</a><button type="button" class="alt" data-a="copy">Copy link</button></div></section>
 <section class="social panel">
 <div class="emo" id="emo"></div>
 <div id="chatlog" aria-live="polite"></div>
@@ -158,69 +159,61 @@ function hostDo(a,v){if(!isHost||!S)return;
  else if(a==='lobby'){S.phase='lobby';emptyBoard();S.log='Back to the lobby'}
  else if(a==='reset'){S.phase='lobby';emptyBoard();S.scores=S.seats.map(()=>0);S.round=0;S.log='New game — scores cleared'}
  else return;commit()}
-/* ---- networking: host-authoritative over PeerJS (WebRTC), with host hand-off ---- */
-const PREFIX='sattilavani-';
-/* Optional relay for networks that block direct phone-to-phone links (free at metered.ca → Open Relay). Paste the username/password here. */
-const TURN_USER='',TURN_PASS='';
-const PEER_OPTS={debug:0,config:{iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478'],username:'peerjs',credential:'peerjsp'}].concat(TURN_USER?[{urls:['stun:stun.relay.metered.ca:80','turn:standard.relay.metered.ca:80','turn:standard.relay.metered.ca:80?transport=tcp','turn:standard.relay.metered.ca:443','turns:standard.relay.metered.ca:443?transport=tcp'],username:TURN_USER,credential:TURN_PASS}]:[])}};
+/* ---- networking: Firebase Realtime Database. One device is host (runs the rules); if it goes quiet, another player takes over. ---- */
+/* Paste your Firebase web config here (Firebase console → Project settings → Your apps → Web app). */
+const FIREBASE_CONFIG={apiKey:"AIzaSyB-AgTdLsovWlfc8xIvSJGMA6azeXGHWF0",authDomain:"badam7-90b56.firebaseapp.com",databaseURL:"https://badam7-90b56-default-rtdb.firebaseio.com",projectId:"badam7-90b56",storageBucket:"badam7-90b56.firebasestorage.app",messagingSenderId:"160409091789",appId:"1:160409091789:web:7506c82ca66aae3a747384"};
 let code=(new URLSearchParams(location.search).get('t')||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
-let peer=null,conn=null,conns=new Map(),saveT=null,lostAt=0,claiming=false;
-const saved=()=>{try{const v=JSON.parse(ls.get('sl.state.'+code)||'null');return v&&Array.isArray(v.seats)?v:null}catch(e){return null}};
-function succOf(){const h=S.seats.find(x=>!x.bot&&x.k!==myKey&&online.has(x.k));if(h)return h.k;for(const k of conns.values())if(k&&k!==myKey)return k;return null}
-function view(k){const v=clone(S);v.online=[...online];if(k!==S.succ&&v.phase==='play')v.hands=v.hands.map((h,i)=>S.seats[i]&&S.seats[i].k===k?h:h.map(()=>''));return v}
-function commit(){render();if(!isHost)return;S.succ=succOf();for(const[c,k]of conns){if(c.open&&k)try{c.send({type:'state',S:view(k)})}catch(e){}}clearTimeout(saveT);saveT=setTimeout(()=>{if(isHost)ls.set('sl.state.'+code,JSON.stringify(S))},400)}
-function setOnline(){online=new Set([...conns.values()].filter(Boolean));online.add(myKey)}
-function leaveSeat(k){const i=seatOf(k);if(i<0)return;if(S.phase==='lobby'){S.seats.splice(i,1);S.scores.splice(i,1)}else{const x=S.seats[i];x.bot=true;x.k='bot'+Date.now()+i;if(!/\(AI\)$/.test(x.name))x.name+=' (AI)';S.log=x.name.replace(' (AI)','')+' left — AI takes over'}}
-function hostData(c,d){if(!d||typeof d!=='object')return;
- if(d.type==='hello'){const k=clip(d.pid);if(!k)return;conns.set(c,k);c.nick=clip(d.nick);setOnline();const i=seatOf(k);if(i>=0&&c.nick&&!S.seats[i].bot)S.seats[i].name=c.nick;commit()}
- else if(d.type==='act'){const k=conns.get(c);if(!k)return;const dd=d.d&&typeof d.d==='object'?d.d:{};
-  if(d.t==='nick'){c.nick=clip(dd.nick);const i=seatOf(k);if(i>=0&&c.nick&&!S.seats[i].bot)S.seats[i].name=c.nick;commit()}
-  else if(d.t==='leave'){leaveSeat(k);commit()}
-  else if(['join','mv','ch','rx'].includes(d.t)){apply(k,d.t,{...dd,nick:c.nick});commit()}}}
+let db=null,base=null,hostRef=null,actsRef=null,remoteS=null,offset=0,loaded=false,hostV=null,hostOk=0;
+const now=()=>Date.now()+offset;
 const netStatus=t=>{$('net').textContent=t};
-function wireHost(p){p.on('connection',c=>{conns.set(c,null);c.on('data',d=>hostData(c,d));c.on('close',()=>{conns.delete(c);setOnline();commit()});c.on('error',()=>{})});
- p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}})}
-function claim(state){if(claiming)return;claiming=true;netStatus('Opening the table…');
- try{conn&&conn.close()}catch(e){}conn=null;try{peer&&peer.destroy()}catch(e){}peer=null;
- const p=new Peer(PREFIX+code,PEER_OPTS);peer=p;
- p.on('open',()=>{if(peer!==p)return;claiming=false;isHost=true;got=true;S=state||fresh();S.chat=S.chat||[];S.host=nick||'Host';
-  if(S.phase==='play'&&S.hands.some(h=>h.some(c=>!OKC.test(c)))){S.phase='lobby';emptyBoard();S.log='Round restarted — the host left mid-round'}
-  ls.set('sl.host.'+code,'1');ls.set('sl.lasthost',code);setOnline();wireHost(p);showInvite();keepAwake();netStatus('');commit()});
- p.on('error',e=>{if(peer!==p)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}peer=null;claiming=false;if(!isHost)startGuest()}else if(isHost)netStatus('Connection trouble — retrying…')})}
-function startGuest(){isHost=false;if(!S)S=fresh();render();netStatus('Connecting to the table…');lostAt=Date.now();
- const p=new Peer(PEER_OPTS);peer=p;setTimeout(()=>{if(peer===p&&!p.open)netStatus('Can’t reach the game server — check your internet connection.')},10000);p.on('open',()=>{if(peer===p){netStatus('Found the game server — reaching the host…');connect()}});
- p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}});
- p.on('error',e=>{if(peer!==p)return;if(e.type==='peer-unavailable')netStatus(S.seats.length?'The host left — the table will reopen in a moment…':'This table isn’t open right now. Retrying…');else netStatus('Connection trouble — retrying…')})}
-function connect(){if(!peer||!peer.open||(conn&&conn.open))return;try{conn&&conn.close()}catch(e){}const c=peer.connect(PREFIX+code,{reliable:true});conn=c;const blocked=()=>{if(conn===c&&!c.open)netStatus('Found the table but can’t reach the host’s device directly — your network may be blocking it. Try switching between Wi-Fi and mobile data.')};setTimeout(blocked,15000);c.on('iceStateChanged',st=>{if(st==='failed')blocked()});
- c.on('open',()=>{if(conn!==c)return;lostAt=0;netStatus('');c.send({type:'hello',pid,nick})});
- c.on('data',d=>{if(conn!==c||!d)return;
-  if(d.type==='state'&&d.S&&Array.isArray(d.S.seats)){S=d.S;got=true;online=new Set(Array.isArray(S.online)?S.online:[]);if(pend&&(S.phase!=='play'||S.turn!==seatOf(myKey)))pend=null;render()}
-  else if(d.type==='handoff'&&S&&S.succ===pid){netStatus('The host left — you’re taking over the table…');setTimeout(()=>{if(!isHost)claim(S)},1500)}});
- c.on('close',()=>{if(conn===c){conn=null;lostAt=Date.now();netStatus('Lost the host — reconnecting…')}})}
-setInterval(()=>{if(!peer&&!claiming&&!isHost&&code&&S&&got)startGuest();if(claiming||!peer)return;
- if(isHost){if(peer.destroyed)claim(S);else if(peer.disconnected)try{peer.reconnect()}catch(e){}return}
- if(conn&&conn.open){lostAt=0;return}if(!lostAt)lostAt=Date.now();const gone=Date.now()-lostAt,si=seatOf(pid);
- const wait=S&&S.succ===pid?4000:ls.get('sl.host.'+code)==='1'?10000:si>=0&&got?20000+si*5000:Infinity;
- if(gone>wait){claim(S&&S.seats.length?S:saved()||fresh());return}
- if(peer.open)connect();else if(peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},3000);
+function commit(){render();if(!isHost||!base)return;if(now()-hostOk>15000){hostTick();return}S.upd=now();base.child('state').set(JSON.stringify(S)).catch(()=>toast('Could not save — check your connection'))}
+function leaveSeat(k){const i=seatOf(k);if(i<0)return;if(S.phase==='lobby'){S.seats.splice(i,1);S.scores.splice(i,1)}else{const x=S.seats[i];x.bot=true;x.k='bot'+Date.now()+i;if(!/\(AI\)$/.test(x.name))x.name+=' (AI)';S.log=x.name.replace(' (AI)','')+' left — AI takes over'}}
+function wantHost(){if(!online.has(pid))return false;if(ls.get('sl.host.'+code)==='1')return true;const i=seatOf(pid);return i>=0&&!S.seats[i].bot}
+function hostTick(){if(!hostRef||!loaded)return;hostRef.transaction(cur=>{const t=now();if(cur&&cur.k===pid)return{k:pid,at:t};if((!cur||t-(cur.at||0)>20000)&&wantHost())return{k:pid,at:t};return},(err,ok,snap)=>{if(err)return;const v=snap&&snap.val(),am=!!v&&v.k===pid;if(am)hostOk=now();if(am&&!isHost)becomeHost();else if(!am&&isHost)stepDown()},false)}
+function onQueued(snap){const a=snap.val()||{};snap.ref.remove();if(!isHost)return;const k=clip(a.k);if(!k)return;const d=a.d&&typeof a.d==='object'?a.d:{},nk=clip(a.nick);
+ if(a.t==='nick'){const i=seatOf(k);if(i>=0&&nk&&!S.seats[i].bot)S.seats[i].name=nk}
+ else if(a.t==='leave')leaveSeat(k);
+ else if(['join','mv','ch','rx'].includes(a.t))apply(k,a.t,{...d,nick:nk});else return;commit()}
+function becomeHost(){isHost=true;got=true;netStatus('');S=remoteS&&Array.isArray(remoteS.seats)?clone(remoteS):fresh();S.chat=S.chat||[];S.host=nick||'Host';
+ hostRef.onDisconnect().remove();actsRef.on('child_added',onQueued);
+ if(ls.get('sl.autoseat.'+code)==='1'){ls.set('sl.autoseat.'+code,'');if(seatOf(pid)<0)apply(pid,'join',{nick})}
+ keepAwake();commit()}
+function stepDown(){isHost=false;actsRef.off('child_added',onQueued);try{hostRef.onDisconnect().cancel()}catch(e){}if(remoteS)S=remoteS;render()}
+function startTable(){base=db.ref('t/'+code);hostRef=base.child('host');actsRef=base.child('acts');S=fresh();render();showInvite();netStatus('Connecting…');
+ const me=base.child('online/'+pid);
+ db.ref('.info/connected').on('value',s=>{if(s.val()===true){me.onDisconnect().remove();me.set({nick:nick||'',at:firebase.database.ServerValue.TIMESTAMP});netStatus(hostV?'':'Opening the table…');setTimeout(hostTick,300)}else netStatus('Reconnecting…')});
+ base.child('online').on('value',s=>{online=new Set(Object.keys(s.val()||{}));if(!isHost)render()});
+ hostRef.on('value',s=>{hostV=s.val();if(isHost){if(hostV&&hostV.k!==pid)stepDown();return}netStatus(hostV?'':(loaded&&S.seats.length?'The host stepped away — someone will take over in a few seconds…':'Waiting for the host to open the table…'))});
+ base.child('state').on('value',snap=>{const v=snap.val();let st=null;try{st=typeof v==='string'?JSON.parse(v):null}catch(e){}if(st&&!Array.isArray(st.seats))st=null;remoteS=st;
+  const first=!loaded;loaded=true;
+  if(first&&!st&&ls.get('sl.host.'+code)!=='1'){closed('This table doesn’t exist yet, or it has closed.');return}
+  if(first&&st&&now()-(st.upd||0)>12*3600e3&&ls.get('sl.host.'+code)!=='1'){closed('This table has closed.');return}
+  if(first)hostTick();
+  if(!isHost&&st){S=st;got=true;if(pend&&(S.phase!=='play'||S.turn!==seatOf(pid)))pend=null;render()}});
+ setInterval(hostTick,5000)}
+function closed(msg){isHost=false;try{base.child('online/'+pid).remove()}catch(e){}base.off();S=null;$('invite').hidden=true;$('status').textContent=msg;
+ $('mid').innerHTML='<div class="panel"><p>Ask the host for a fresh link, or start your own table.</p><div class="btns"><button data-a="host">Start a new table</button></div></div>'}
 async function keepAwake(){if(keepAwake.on)return;keepAwake.on=1;const req=async()=>{try{if(navigator.wakeLock)await navigator.wakeLock.request('screen')}catch(e){}};await req();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')req()})}
 function showInvite(){const link=location.origin+location.pathname+'?t='+code;$('invite').hidden=false;$('ilink').textContent=link;
  $('wa').href='https://wa.me/?text='+encodeURIComponent('Satti Lavani! 🃏 Tap to join our table, type your name and take a seat: '+link)}
-function handOff(){leaveSeat(myKey);commit();const sc=S.succ;for(const[c,k]of conns)if(k===sc)try{c.send({type:'handoff'})}catch(e){}ls.set('sl.host.'+code,'');ls.set('sl.state.'+code,'');if(ls.get('sl.lasthost')===code)ls.set('sl.lasthost','')}
-function leaveTable(){if(isHost)handOff();else if(conn&&conn.open)conn.send({type:'act',t:'leave',d:{}});setTimeout(()=>{isHost=false;try{peer&&peer.destroy()}catch(e){}location.href=location.pathname},700)}
-function newTable(){const seated=seatOf(myKey)>=0||!S||!S.seats.length;if(isHost)handOff();else if(conn&&conn.open)conn.send({type:'act',t:'leave',d:{}});
- setTimeout(()=>{for(const c of conns.keys())try{c.close()}catch(e){}conns.clear();isHost=false;code=Math.random().toString(36).slice(2,8);history.replaceState(null,'','?t='+code);
-  const st=fresh();if(seated){st.seats=[{k:myKey,name:nick||'Host'}];st.scores=[0]}S=st;boardSig='';claim(st);toast('Your new table is ready — send the new link')},700)}
+function goTable(c,seat){ls.set('sl.host.'+c,'1');ls.set('sl.lasthost',c);if(seat)ls.set('sl.autoseat.'+c,'1');location.href=location.pathname+'?t='+c}
+const newCode=()=>Math.random().toString(36).slice(2,8);
+function quit(then){if(S&&base){if(isHost){leaveSeat(pid);commit();hostRef.remove()}else if(seatOf(pid)>=0)actsRef.push({k:pid,t:'leave',d:{},nick});base.child('online/'+pid).remove()}
+ ls.set('sl.host.'+code,'');if(ls.get('sl.lasthost')===code)ls.set('sl.lasthost','');setTimeout(then,700)}
+function leaveTable(){quit(()=>{location.href=location.pathname})}
+function newTable(){const seated=!S||seatOf(pid)>=0||!S.seats.length;quit(()=>goTable(newCode(),seated))}
 function landing(){const last=ls.get('sl.lasthost');$('status').textContent='Start a table, then share the link on WhatsApp';
  $('mid').innerHTML=`<div class="panel"><h2>Host a game</h2><p>Start a table on this phone or computer, then send the invite link to the family. Nobody needs an account.</p><div class="btns"><button data-a="host">Start a new table</button>${last?`<button class="alt" data-a="reopen">Reopen my last table</button>`:''}</div><p class="note">Got a link from someone? Just open it — it brings you straight to their table.</p></div>`}
-setInterval(()=>{if(!isHost||!S||S.phase!=='play')return;const i=S.turn,x=S.seats[i];if(!x)return;
+const awayT={};
+setInterval(()=>{if(!isHost||!S||S.phase!=='play'||now()-hostOk>15000)return;const i=S.turn,x=S.seats[i];if(!x)return;
  const age=Date.now()-S.turnAt,away=!x.bot&&!online.has(x.k)&&x.k!==myKey;
  if(!moves(i).length){if(age>1300){pass(i);commit()}return}
- if((x.bot&&age>1400)||(away&&age>8000)){const c=botPick(S.hands[i]);if(c){play(i,c);if(away)S.log+=' (AI stood in)';commit()}}},500);
+ if(away)awayT[x.k]=awayT[x.k]||Date.now();else delete awayT[x.k];
+ if((x.bot&&age>1400)||(away&&age>(Date.now()-awayT[x.k]>30000?1400:8000))){const c=botPick(S.hands[i]);if(c){play(i,c);if(away)S.log+=' (AI stood in)';commit()}}},500);
 
 /* ---- player actions ---- */
-function act(t,d){if(isHost){apply(myKey,t,{...d,nick});pend=null;commit();return}
- if(!conn||!conn.open){toast('Not connected yet — hang on a moment');pend=null;render();return}conn.send({type:'act',t,d})}
+function act(t,d){if(isHost){apply(pid,t,{...d,nick});pend=null;commit();return}
+ if(!actsRef){toast('Not connected yet — hang on a moment');pend=null;render();return}actsRef.push({k:pid,t,d:d||{},nick}).catch(()=>toast('Could not send — check your connection'))}
 
 /* ---- render ---- */
 const card=(c,cls='')=>{const{r,s}=pc(c);return`<span class="cd ${red(s)?'r':''} ${cls}" data-c="${c}"><b>${RN[r]}</b><i>${SYM[s]}</i></span>`};
@@ -257,7 +250,7 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
  let m='';
  if(S.phase==='lobby'){m=`<div class="panel"><h2>The table</h2><ol class="seats">${S.seats.map((x,i)=>`<li><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${isHost?`<button class="x" data-a="rm" data-i="${i}" aria-label="Remove ${esc(x.name)}">Remove</button>`:''}</li>`).join('')||'<li class="note">Nobody seated yet.</li>'}</ol>
   <div class="btns">${mine<0?`<button data-a="join" ${n>=8?'disabled':''}>Take a seat</button>`:''}${isHost?`<button class="alt" data-a="bot" ${n>=8?'disabled':''}>Add AI player</button><button data-a="deal" ${n<3?'disabled':''}>Deal cards</button>${S.round>0?'<button class="alt" data-a="reset">New game (clear scores)</button>':''}`:''}<button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>
-  <p class="note">${isHost?'You’re hosting. Keep this page open while you play — if you leave, another player takes over. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p></div>`}
+  <p class="note">${isHost?'You’re hosting. If you step away, another player takes over automatically. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p></div>`}
  else if(S.phase==='over'){const ord=S.seats.map((x,i)=>i).sort((a,b)=>(S.scores[a]||0)-(S.scores[b]||0));
   m=`<div class="panel"><h2>Round ${S.round} scores</h2><table><thead><tr><th>Player</th><th class="n">Left</th><th class="n">This round</th><th class="n">Total</th></tr></thead><tbody>${ord.map(i=>`<tr><td>${esc(nameOf(i))}${i===S.winner?' 🏆':''}</td><td class="n">${(S.hands[i]||[]).length}</td><td class="n">${S.lastPts[i]||0}</td><td class="n"><b>${S.scores[i]||0}</b></td></tr>`).join('')}</tbody></table>
   <h2 class="lefth">Cards left in hand</h2><div class="left">${ord.map(i=>{const h=(S.hands[i]||[]).filter(c=>OKC.test(c)).slice().sort((x,y)=>SU.indexOf(pc(x).s)-SU.indexOf(pc(y).s)||pc(x).r-pc(y).r);return`<div class="lrow" style="border-left:5px solid ${pcol(i)}"><b>${esc(nameOf(i))}</b><span class="minis">${h.length?h.map(c=>`<span class="mini ${red(pc(c).s)?'rd':''}">${RN[pc(c).r]}${SYM[pc(c).s]}</span>`).join(''):'<em>Went out first 🏆</em>'}</span><small>${S.lastPts[i]||0} pts</small></div>`}).join('')}</div>
@@ -275,11 +268,11 @@ $('nick').value=nick;
 const bb=$('bell'),bset=()=>{bb.textContent=bellOn?'🔔 Bell on':'🔕 Bell off';bb.setAttribute('aria-pressed',bellOn)};bset();
 bb.addEventListener('click',()=>{bellOn=!bellOn;ls.set('sl.bell',bellOn?'1':'0');bset();if(bellOn)ding()});
 document.addEventListener('pointerdown',()=>{if(bellOn&&!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}},{once:true});
-$('nick').addEventListener('input',e=>{nick=clip(e.target.value);ls.set('sl.nick',nick);clearTimeout(act.n);act.n=setTimeout(()=>{if(conn&&conn.open)conn.send({type:'act',t:'nick',d:{nick}})},600);if(isHost&&S){const i=seatOf(myKey);if(i>=0&&nick){S.seats[i].name=nick;}S.host=nick;clearTimeout(act.t);act.t=setTimeout(commit,800)}});
+$('nick').addEventListener('input',e=>{nick=clip(e.target.value);ls.set('sl.nick',nick);clearTimeout(act.n);act.n=setTimeout(()=>{if(base){base.child('online/'+pid).update({nick});if(!isHost&&seatOf(pid)>=0)actsRef.push({k:pid,t:'nick',d:{},nick})}},600);if(isHost&&S){const i=seatOf(myKey);if(i>=0&&nick){S.seats[i].name=nick;}S.host=nick;clearTimeout(act.t);act.t=setTimeout(commit,800)}});
 function onAct(b){const a=b.dataset.a;if(a==='play'){if(pend)return;const c=b.dataset.c;if(!OKC.test(c))return;if(!isHost){pend=c;setTimeout(()=>{pend=null;render()},6000)}act('mv',{c});render()}
  else if(a==='join'){if(!nick){toast('Type your name at the top first');$('nick').focus();return}act('join',{})}
- else if(a==='host'){code=Math.random().toString(36).slice(2,8);ls.set('sl.host.'+code,'1');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';claim(fresh())}
- else if(a==='reopen'){code=ls.get('sl.lasthost');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';claim(saved()||fresh())}
+ else if(a==='host')goTable(newCode(),true);
+ else if(a==='reopen'){const c=ls.get('sl.lasthost');if(c)goTable(c,false)}
  else if(a==='leave'){if(Date.now()-(onAct.lv||0)>5000){onAct.lv=Date.now();toast('Tap “Leave table” again to confirm');return}leaveTable()}
  else if(a==='newtable'){if(Date.now()-(onAct.sure||0)>5000){onAct.sure=Date.now();toast('Tap again to confirm — you’ll leave this table and get a new link');return}onAct.sure=0;newTable()}
  else if(a==='copy'){const l=$('ilink').textContent;(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(()=>toast('Link copied — paste it in WhatsApp'),()=>toast('Press and hold the link to copy it'))}
@@ -287,7 +280,7 @@ function onAct(b){const a=b.dataset.a;if(a==='play'){if(pend)return;const c=b.da
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)onAct(b)});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.a==='play'){e.preventDefault();onAct(e.target)}});
 $('chat').addEventListener('submit',e=>{e.preventDefault();const t=$('msg').value.trim();if(!t)return;act('ch',{text:t});$('msg').value=''});
-if(!window.Peer){S=null;$('status').textContent='Couldn’t load the game’s connection code — check your internet and reload.'}
-else if(!code)landing();else if(ls.get('sl.host.'+code)==='1')claim(saved()||fresh());else startGuest();
+if(!window.firebase||!FIREBASE_CONFIG){S=null;$('status').textContent=FIREBASE_CONFIG?'Couldn’t load the game’s connection code — check your internet and reload.':'Setup needed: paste your Firebase config into index.html.'}
+else{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();db.ref('.info/serverTimeOffset').on('value',s=>{offset=s.val()||0});if(!code)landing();else startTable()}
 }</script>
 </body></html>
