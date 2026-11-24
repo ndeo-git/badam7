@@ -25,14 +25,14 @@ header span{color:var(--mut);font-size:15px}
 input{font:16px Mukta,sans-serif;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--pan);color:var(--ink);min-height:44px}
 .name input{width:9.5em}
 .felt{background:radial-gradient(120% 90% at 50% 0%,var(--felt2),var(--felt));border-radius:18px;padding:clamp(10px,2.4vw,20px);box-shadow:inset 0 0 0 2px #0002,0 10px 30px -14px #5c153088;position:relative}
-#board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,2.5vw,18px);max-width:440px;margin:0 auto;padding-top:14px}
+#board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,2.5vw,18px);max-width:360px;margin:0 auto;padding-top:4px}
 .col{container-type:inline-size}
-.stack{position:relative;height:calc(12*25cqw + 140cqw)}
-.pc,.ph{position:absolute;left:0;width:100%;height:140cqw;top:calc(var(--i)*25cqw);border-radius:8cqw}
+.stack{position:relative;height:calc(12*20cqw + 118cqw)}
+.pc,.ph{position:absolute;left:0;width:100%;height:118cqw;top:calc(var(--i)*20cqw);border-radius:8cqw}
 .pc{background:var(--card);color:#1c1418;box-shadow:0 -1px 0 #0001,0 2px 5px #0006;border:1px solid #0002}
 .pc.r{color:#c3142d}
-.pc b{position:absolute;left:7cqw;top:2cqw;font:800 19cqw/1 Mukta,sans-serif;letter-spacing:-.02em}
-.pc i{position:absolute;inset:25cqw 0 0;display:grid;place-items:center;font-style:normal;font-size:60cqw;line-height:1}
+.pc b{position:absolute;left:7cqw;top:1.5cqw;font:800 17cqw/1 Mukta,sans-serif;letter-spacing:-.02em}
+.pc i{position:absolute;inset:20cqw 0 0;display:grid;place-items:center;font-style:normal;font-size:60cqw;line-height:1}
 .pc.hot{outline:3px solid var(--pc,var(--gold));outline-offset:1px}
 .who.btm{top:auto;bottom:5cqw;right:50%;transform:translateX(50%);max-width:90%}
 .who{position:absolute;right:3cqw;top:3cqw;max-width:60%;background:var(--pc,var(--gold));color:#fff;font:700 11px/1.45 Mukta,sans-serif;font-style:normal;padding:0 7px;border-radius:7px;white-space:nowrap;max-width:140%;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 4px #0005}
@@ -63,7 +63,7 @@ header .bell{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}he
 #status{font-weight:600;font-size:18px;margin:4px 0}
 #log{color:var(--mut);font-size:15px;min-height:1.5em}
 .hand{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-.hand .cd{width:clamp(42px,9vw,58px);font-size:clamp(15px,3.4vw,20px);border:0;cursor:default;opacity:.55;filter:saturate(.6)}
+.hand .cd{width:clamp(38px,8.6vw,54px);font-size:clamp(14px,3.2vw,19px);border:0;cursor:default;opacity:.55;filter:saturate(.6)}
 .hand .gap{width:6px}
 .hand .cd.ok{opacity:1;filter:none;cursor:pointer;outline:2.5px solid var(--gold);transform:translateY(-6px);animation:bob 1.6s ease-in-out infinite}
 .hand .cd.pend{opacity:.35;outline:2px dashed var(--gold)}
@@ -97,7 +97,12 @@ body{padding-bottom:calc(118px + env(safe-area-inset-bottom))}
 @keyframes bub{0%{opacity:0;transform:translateY(-10px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 .decl{background:var(--felt2);color:#fff;border-radius:14px;padding:10px 14px;margin:8px 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.decl b{flex:1 1 200px}.decl button{background:#fff;color:var(--felt2)}.decl button.alt{background:transparent;color:#fff;border:1px solid #fff8}
 .sure{background:#2f9e44;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}.unsure{background:#868e96;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}
-#passed{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#000c;color:#fff;font:800 26px/1.2 Mukta,sans-serif;padding:12px 22px;border-radius:16px;text-align:center;opacity:0;pointer-events:none}#passed small{display:block;font-weight:500;font-size:14px;opacity:.85}#passed.show{animation:pop 2.8s ease-out}
+#passed{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;opacity:0;z-index:60}#passed.show{animation:stamp 3.4s ease-out}#passed.small.show{animation:stamp 1.8s ease-out}
+.stamp{display:grid;justify-items:center;transform:rotate(-14deg);color:#ff3b3b;background:#120408cc;border:clamp(5px,1.6vw,9px) solid #ff3b3b;border-radius:18px;padding:4px clamp(16px,5vw,32px) 8px;box-shadow:0 0 0 3px #12040888,0 12px 40px #000a}
+.stamp b{font:800 clamp(60px,20vw,120px)/1 Mukta,sans-serif;letter-spacing:.06em}.stamp small{color:#fff;font:600 clamp(14px,3.8vw,19px)/1.2 Mukta,sans-serif}
+#passed.small .stamp b{font-size:clamp(34px,10vw,60px)}#passed.small .stamp{border-width:5px}
+@keyframes stamp{0%{opacity:0;transform:scale(2.4)}10%{opacity:1;transform:scale(.95)}14%{transform:scale(1)}82%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){#passed.show,#passed.small.show{animation:none;opacity:1}}
 .emo{display:flex;flex-wrap:wrap;gap:6px}.emo button{background:var(--pan);border:1px solid var(--line);font-size:22px;padding:4px 12px}
 #chatlog{max-height:220px;overflow-y:auto;display:grid;gap:4px;font-size:15px;padding:2px}
 #chatlog p{margin:0}#chatlog b{color:var(--felt2)}
@@ -111,12 +116,12 @@ form{display:flex;gap:8px}form input{flex:1}
 <header><h1>सत्ती लावणी</h1><span>Satti Lavani · Badam 7</span>
 <button type="button" id="bell" class="alt bell" aria-pressed="true">🔔 Bell on</button><label class="name">Your name <input id="nick" maxlength="18" placeholder="e.g. Nikhil" autocomplete="nickname"></label></header>
 <div class="felt"><div id="board"></div><div id="rx" aria-live="polite"></div><div id="passed" aria-live="assertive"></div></div>
-<div class="players" id="players"></div>
 <div id="status">Opening the table…</div>
-<div id="net" class="note" aria-live="polite"></div>
-<div id="log"></div>
 <div id="declp"></div>
 <div id="hand" class="hand"></div>
+<div class="players" id="players"></div>
+<div id="log"></div>
+<div id="net" class="note" aria-live="polite"></div>
 <div id="mid"></div>
 <section id="invite" class="panel" hidden><h2>Invite the family</h2><p class="note">Send this link. Anyone who opens it can join — no account needed. Anyone at the table can share it.</p><p id="ilink" class="ilink"></p><div class="btns"><a id="wa" class="btn" target="_blank" rel="noopener">Send on WhatsApp</a><button type="button" class="alt" data-a="copy">Copy link</button></div></section>
 <div id="bubbles" aria-live="polite"></div>
@@ -262,7 +267,7 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
  else if(S.phase==='play'){const x=S.seats[S.turn];if(S.turn===mine)st=moves(mine).length?'Your turn — tap a glowing card':'No card fits — passing for you…';else st=x?esc(x.name)+(x.bot?' is thinking…':online.has(x.k)?'’s turn':' is away — AI will play in a moment'):'';}
  else st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
  $('status').innerHTML=st;$('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
- {const hk=S.round+':'+(S.hist||[]).length,hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&hl.i===mine&&S.phase==='play'){const pz=$('passed');pz.innerHTML='Your turn was PASSED<small>No card fit on the board</small>';pz.classList.remove('show');void pz.offsetWidth;pz.classList.add('show');if(navigator.vibrate)try{navigator.vibrate(120)}catch(e){}}}}
+ {const hk=S.round+':'+(S.hist||[]).length,hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?'Your turn was passed — no card fits':esc(nameOf(hl.i))+' had no card'}</small></div>`;void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
  if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&Date.now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
  {const ch=S.chat||[],mx=ch.reduce((a,c)=>Math.max(a,c.at||0),0);if(lastChat===null){if(got)lastChat=mx}else if(mx>lastChat){for(const c of ch.filter(c=>c.at>lastChat).slice(-3)){bubble(`<b>${esc(c.w)}</b>: ${esc(c.t)}`);if($('chatpanel').hidden)unread++}lastChat=mx;$('unread').textContent=unread?String(unread):''}}
  const dp=$('declp');const myn=mine>=0?(S.hands[mine]||[]).filter(c=>OKC.test(c)).length:0,md=(S.decl||{})[mine];
