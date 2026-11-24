@@ -158,40 +158,56 @@ function hostDo(a,v){if(!isHost||!S)return;
  else if(a==='lobby'){S.phase='lobby';emptyBoard();S.log='Back to the lobby'}
  else if(a==='reset'){S.phase='lobby';emptyBoard();S.scores=S.seats.map(()=>0);S.round=0;S.log='New game — scores cleared'}
  else return;commit()}
-/* ---- networking: host-authoritative over PeerJS (WebRTC) ---- */
+/* ---- networking: host-authoritative over PeerJS (WebRTC), with host hand-off ---- */
 const PREFIX='sattilavani-';
 let code=(new URLSearchParams(location.search).get('t')||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
-let peer=null,conn=null,conns=new Map(),saveT=null,hostGo=null;
-function view(k){const v=clone(S);v.online=[...online];if(v.phase==='play')v.hands=v.hands.map((h,i)=>S.seats[i]&&S.seats[i].k===k?h:h.map(()=>''));return v}
-function commit(){render();if(!isHost)return;for(const[c,k]of conns){if(c.open&&k)try{c.send({type:'state',S:view(k)})}catch(e){}}clearTimeout(saveT);saveT=setTimeout(()=>ls.set('sl.state.'+code,JSON.stringify(S)),400)}
+let peer=null,conn=null,conns=new Map(),saveT=null,lostAt=0,claiming=false;
+const saved=()=>{try{const v=JSON.parse(ls.get('sl.state.'+code)||'null');return v&&Array.isArray(v.seats)?v:null}catch(e){return null}};
+function succOf(){const h=S.seats.find(x=>!x.bot&&x.k!==myKey&&online.has(x.k));if(h)return h.k;for(const k of conns.values())if(k&&k!==myKey)return k;return null}
+function view(k){const v=clone(S);v.online=[...online];if(k!==S.succ&&v.phase==='play')v.hands=v.hands.map((h,i)=>S.seats[i]&&S.seats[i].k===k?h:h.map(()=>''));return v}
+function commit(){render();if(!isHost)return;S.succ=succOf();for(const[c,k]of conns){if(c.open&&k)try{c.send({type:'state',S:view(k)})}catch(e){}}clearTimeout(saveT);saveT=setTimeout(()=>{if(isHost)ls.set('sl.state.'+code,JSON.stringify(S))},400)}
 function setOnline(){online=new Set([...conns.values()].filter(Boolean));online.add(myKey)}
+function leaveSeat(k){const i=seatOf(k);if(i<0)return;if(S.phase==='lobby'){S.seats.splice(i,1);S.scores.splice(i,1)}else{const x=S.seats[i];x.bot=true;x.k='bot'+Date.now()+i;if(!/\(AI\)$/.test(x.name))x.name+=' (AI)';S.log=x.name.replace(' (AI)','')+' left — AI takes over'}}
 function hostData(c,d){if(!d||typeof d!=='object')return;
  if(d.type==='hello'){const k=clip(d.pid);if(!k)return;conns.set(c,k);c.nick=clip(d.nick);setOnline();const i=seatOf(k);if(i>=0&&c.nick&&!S.seats[i].bot)S.seats[i].name=c.nick;commit()}
  else if(d.type==='act'){const k=conns.get(c);if(!k)return;const dd=d.d&&typeof d.d==='object'?d.d:{};
-  if(d.t==='nick'){c.nick=clip(dd.nick);const i=seatOf(k);if(i>=0&&c.nick)S.seats[i].name=c.nick;commit()}
+  if(d.t==='nick'){c.nick=clip(dd.nick);const i=seatOf(k);if(i>=0&&c.nick&&!S.seats[i].bot)S.seats[i].name=c.nick;commit()}
+  else if(d.t==='leave'){leaveSeat(k);commit()}
   else if(['join','mv','ch','rx'].includes(d.t)){apply(k,d.t,{...dd,nick:c.nick});commit()}}}
 const netStatus=t=>{$('net').textContent=t};
-function startHost(){isHost=true;got=true;let saved=null;try{saved=JSON.parse(ls.get('sl.state.'+code)||'null')}catch(e){}
- S=saved&&saved.seats?saved:fresh();S.host=nick||'Host';ls.set('sl.lasthost',code);setOnline();showInvite();keepAwake();render();
- hostGo=()=>{peer=new Peer(PREFIX+code,{debug:0});
-  peer.on('open',()=>netStatus(''));
-  peer.on('connection',c=>{conns.set(c,null);c.on('data',d=>hostData(c,d));c.on('close',()=>{conns.delete(c);setOnline();commit()});c.on('error',()=>{})});
-  peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});
-  peer.on('error',e=>{if(e.type==='unavailable-id'){netStatus('Reopening your table…');try{peer.destroy()}catch(x){}setTimeout(hostGo,4000)}else if(['network','server-error','socket-error','socket-closed'].includes(e.type))netStatus('Connection trouble — retrying…')})};
- hostGo();
- setInterval(()=>{if(!peer)return;if(peer.destroyed)hostGo();else if(peer.disconnected)try{peer.reconnect()}catch(e){}else if(peer.open)netStatus('')},5000)}
-function startGuest(){S=fresh();render();netStatus('Connecting to the table…');
- peer=new Peer({debug:0});peer.on('open',connect);
- peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});
- peer.on('error',e=>{if(e.type==='peer-unavailable')netStatus('The table isn’t open right now — ask the host to open their page. Retrying…');else netStatus('Connection trouble — retrying…')});
- setInterval(()=>{if(peer&&peer.open&&!(conn&&conn.open))connect();else if(peer&&peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},6000)}
-function connect(){if(conn&&conn.open)return;try{if(conn)conn.close()}catch(e){}const c=peer.connect(PREFIX+code,{reliable:true});conn=c;
- c.on('open',()=>{netStatus('');c.send({type:'hello',pid,nick})});
- c.on('data',d=>{if(d&&d.type==='state'&&d.S&&Array.isArray(d.S.seats)){S=d.S;got=true;online=new Set(Array.isArray(S.online)?S.online:[]);if(pend&&(S.phase!=='play'||S.turn!==seatOf(myKey)))pend=null;render()}});
- c.on('close',()=>{if(conn===c){conn=null;netStatus('Lost the table — reconnecting…')}});c.on('error',()=>{})}
-async function keepAwake(){const req=async()=>{try{if(navigator.wakeLock)await navigator.wakeLock.request('screen')}catch(e){}};await req();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')req()})}
+function wireHost(p){p.on('connection',c=>{conns.set(c,null);c.on('data',d=>hostData(c,d));c.on('close',()=>{conns.delete(c);setOnline();commit()});c.on('error',()=>{})});
+ p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}})}
+function claim(state){if(claiming)return;claiming=true;netStatus('Opening the table…');
+ try{conn&&conn.close()}catch(e){}conn=null;try{peer&&peer.destroy()}catch(e){}peer=null;
+ const p=new Peer(PREFIX+code,{debug:0});peer=p;
+ p.on('open',()=>{if(peer!==p)return;claiming=false;isHost=true;got=true;S=state||fresh();S.chat=S.chat||[];S.host=nick||'Host';
+  if(S.phase==='play'&&S.hands.some(h=>h.some(c=>!OKC.test(c)))){S.phase='lobby';emptyBoard();S.log='Round restarted — the host left mid-round'}
+  ls.set('sl.host.'+code,'1');ls.set('sl.lasthost',code);setOnline();wireHost(p);showInvite();keepAwake();netStatus('');commit()});
+ p.on('error',e=>{if(peer!==p)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}peer=null;claiming=false;if(!isHost)startGuest()}else if(isHost)netStatus('Connection trouble — retrying…')})}
+function startGuest(){isHost=false;if(!S)S=fresh();render();netStatus('Connecting to the table…');lostAt=Date.now();
+ const p=new Peer({debug:0});peer=p;p.on('open',()=>{if(peer===p)connect()});
+ p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}});
+ p.on('error',e=>{if(peer!==p)return;if(e.type==='peer-unavailable')netStatus(S.seats.length?'The host left — the table will reopen in a moment…':'This table isn’t open right now. Retrying…');else netStatus('Connection trouble — retrying…')})}
+function connect(){if(!peer||!peer.open||(conn&&conn.open))return;try{conn&&conn.close()}catch(e){}const c=peer.connect(PREFIX+code,{reliable:true});conn=c;
+ c.on('open',()=>{if(conn!==c)return;lostAt=0;netStatus('');c.send({type:'hello',pid,nick})});
+ c.on('data',d=>{if(conn!==c||!d)return;
+  if(d.type==='state'&&d.S&&Array.isArray(d.S.seats)){S=d.S;got=true;online=new Set(Array.isArray(S.online)?S.online:[]);if(pend&&(S.phase!=='play'||S.turn!==seatOf(myKey)))pend=null;render()}
+  else if(d.type==='handoff'&&S&&S.succ===pid){netStatus('The host left — you’re taking over the table…');setTimeout(()=>{if(!isHost)claim(S)},1500)}});
+ c.on('close',()=>{if(conn===c){conn=null;lostAt=Date.now();netStatus('Lost the host — reconnecting…')}})}
+setInterval(()=>{if(!peer&&!claiming&&!isHost&&code&&S&&got)startGuest();if(claiming||!peer)return;
+ if(isHost){if(peer.destroyed)claim(S);else if(peer.disconnected)try{peer.reconnect()}catch(e){}return}
+ if(conn&&conn.open){lostAt=0;return}if(!lostAt)lostAt=Date.now();const gone=Date.now()-lostAt,si=seatOf(pid);
+ const wait=S&&S.succ===pid?4000:ls.get('sl.host.'+code)==='1'?10000:si>=0&&got?20000+si*5000:Infinity;
+ if(gone>wait){claim(S&&S.seats.length?S:saved()||fresh());return}
+ if(peer.open)connect();else if(peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},3000);
+async function keepAwake(){if(keepAwake.on)return;keepAwake.on=1;const req=async()=>{try{if(navigator.wakeLock)await navigator.wakeLock.request('screen')}catch(e){}};await req();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')req()})}
 function showInvite(){const link=location.origin+location.pathname+'?t='+code;$('invite').hidden=false;$('ilink').textContent=link;
  $('wa').href='https://wa.me/?text='+encodeURIComponent('Satti Lavani! 🃏 Tap to join our table, type your name and take a seat: '+link)}
+function handOff(){leaveSeat(myKey);commit();const sc=S.succ;for(const[c,k]of conns)if(k===sc)try{c.send({type:'handoff'})}catch(e){}ls.set('sl.host.'+code,'');ls.set('sl.state.'+code,'');if(ls.get('sl.lasthost')===code)ls.set('sl.lasthost','')}
+function leaveTable(){if(isHost)handOff();else if(conn&&conn.open)conn.send({type:'act',t:'leave',d:{}});setTimeout(()=>{isHost=false;try{peer&&peer.destroy()}catch(e){}location.href=location.pathname},700)}
+function newTable(){const seated=seatOf(myKey)>=0||!S||!S.seats.length;if(isHost)handOff();else if(conn&&conn.open)conn.send({type:'act',t:'leave',d:{}});
+ setTimeout(()=>{for(const c of conns.keys())try{c.close()}catch(e){}conns.clear();isHost=false;code=Math.random().toString(36).slice(2,8);history.replaceState(null,'','?t='+code);
+  const st=fresh();if(seated){st.seats=[{k:myKey,name:nick||'Host'}];st.scores=[0]}S=st;boardSig='';claim(st);toast('Your new table is ready — send the new link')},700)}
 function landing(){const last=ls.get('sl.lasthost');$('status').textContent='Start a table, then share the link on WhatsApp';
  $('mid').innerHTML=`<div class="panel"><h2>Host a game</h2><p>Start a table on this phone or computer, then send the invite link to the family. Nobody needs an account.</p><div class="btns"><button data-a="host">Start a new table</button>${last?`<button class="alt" data-a="reopen">Reopen my last table</button>`:''}</div><p class="note">Got a link from someone? Just open it — it brings you straight to their table.</p></div>`}
 setInterval(()=>{if(!isHost||!S||S.phase!=='play')return;const i=S.turn,x=S.seats[i];if(!x)return;
@@ -224,7 +240,7 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
   return`<div class="col" aria-label="${s} pile"><div class="stack">${h}</div></div>`}).join('')}
  const ak=S.round+':'+(S.hist||[]).length;if(ak!==animKey){const prev=animKey;animKey=ak;const hl=(S.hist||[]).slice(-1)[0];if(prev!==null&&got&&hl&&S.phase!=='lobby'&&!rm.matches)requestAnimationFrame(()=>fly(hl.i,hl.c,mine))}
  $('players').innerHTML=S.seats.map((x,i)=>{const up=x.bot||online.has(x.k)||x.k===myKey;const cnt=S.phase==='lobby'?'':((S.hands[i]||[]).length===1?'1 card':(S.hands[i]||[]).length+' cards')+' · ';
-  return`<div class="pl ${S.phase==='play'&&S.turn===i?'on':''}" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}<small>${cnt}${S.scores[i]||0} pts</small>${S.phase==='play'&&(S.hands[i]||[]).length===2?'<span class="two">2 left!</span>':''}${lb(i)}</div>`}).join('');
+  return`<div class="pl ${S.phase==='play'&&S.turn===i?'on':''}" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${cnt}${S.scores[i]||0} pts</small>`:''}${S.phase==='play'&&(S.hands[i]||[]).length===2?'<span class="two">2 left!</span>':''}${lb(i)}</div>`}).join('');
  let st='',hint='';
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
  else if(S.phase==='play'){const x=S.seats[S.turn];if(S.turn===mine)st=moves(mine).length?'Your turn — tap a glowing card':'No card fits — passing for you…';else st=x?esc(x.name)+(x.bot?' is thinking…':online.has(x.k)?'’s turn':' is away — AI will play in a moment'):'';}
@@ -237,13 +253,13 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
  else if(S.phase==='play')hd.innerHTML='<p class="note">You’re watching this round. Seats open between rounds.</p>';else hd.innerHTML='';
  let m='';
  if(S.phase==='lobby'){m=`<div class="panel"><h2>The table</h2><ol class="seats">${S.seats.map((x,i)=>`<li><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${isHost?`<button class="x" data-a="rm" data-i="${i}" aria-label="Remove ${esc(x.name)}">Remove</button>`:''}</li>`).join('')||'<li class="note">Nobody seated yet.</li>'}</ol>
-  <div class="btns">${mine<0?`<button data-a="join" ${n>=8?'disabled':''}>Take a seat</button>`:''}${isHost?`<button class="alt" data-a="bot" ${n>=8?'disabled':''}>Add AI player</button><button data-a="deal" ${n<3?'disabled':''}>Deal cards</button>`:''}</div>
-  <p class="note">${isHost?'You’re hosting. Keep this page open and your screen on while you play. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p></div>`}
+  <div class="btns">${mine<0?`<button data-a="join" ${n>=8?'disabled':''}>Take a seat</button>`:''}${isHost?`<button class="alt" data-a="bot" ${n>=8?'disabled':''}>Add AI player</button><button data-a="deal" ${n<3?'disabled':''}>Deal cards</button>${S.round>0?'<button class="alt" data-a="reset">New game (clear scores)</button>':''}`:''}<button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>
+  <p class="note">${isHost?'You’re hosting. Keep this page open while you play — if you leave, another player takes over. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p></div>`}
  else if(S.phase==='over'){const ord=S.seats.map((x,i)=>i).sort((a,b)=>(S.scores[a]||0)-(S.scores[b]||0));
   m=`<div class="panel"><h2>Round ${S.round} scores</h2><table><thead><tr><th>Player</th><th class="n">Left</th><th class="n">This round</th><th class="n">Total</th></tr></thead><tbody>${ord.map(i=>`<tr><td>${esc(nameOf(i))}${i===S.winner?' 🏆':''}</td><td class="n">${(S.hands[i]||[]).length}</td><td class="n">${S.lastPts[i]||0}</td><td class="n"><b>${S.scores[i]||0}</b></td></tr>`).join('')}</tbody></table>
   <h2 class="lefth">Cards left in hand</h2><div class="left">${ord.map(i=>{const h=(S.hands[i]||[]).filter(c=>OKC.test(c)).slice().sort((x,y)=>SU.indexOf(pc(x).s)-SU.indexOf(pc(y).s)||pc(x).r-pc(y).r);return`<div class="lrow" style="border-left:5px solid ${pcol(i)}"><b>${esc(nameOf(i))}</b><span class="minis">${h.length?h.map(c=>`<span class="mini ${red(pc(c).s)?'rd':''}">${RN[pc(c).r]}${SYM[pc(c).s]}</span>`).join(''):'<em>Went out first 🏆</em>'}</span><small>${S.lastPts[i]||0} pts</small></div>`}).join('')}</div>
-  ${isHost?'<div class="btns"><button data-a="deal">Deal next round</button><button class="alt" data-a="lobby">Change players</button><button class="alt" data-a="reset">New game</button></div>':'<p class="note">Waiting for the host to deal the next round.</p>'}</div>`}
- else if(isHost)m='<div class="btns"><button class="x" data-a="lobby">Stop round</button></div>';
+  ${isHost?'<div class="btns"><button data-a="deal">Deal next round</button><button class="alt" data-a="lobby">Change players</button><button class="alt" data-a="reset">New game</button></div>':'<p class="note">Waiting for the host to deal the next round.</p>'}<div class="btns"><button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div></div>`}
+ else m=`<div class="btns">${isHost?'<button class="x" data-a="lobby">Stop round</button>':''}${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>`;
  $('mid').innerHTML=m;
  const cl=$('chatlog'),atEnd=cl.scrollHeight-cl.scrollTop-cl.clientHeight<30;
  cl.innerHTML=(S.chat||[]).map(c=>`<p><b>${esc(c.w)}:</b> ${esc(c.t)}</p>`).join('')||'<p class="note">Chat with the table here.</p>';if(atEnd)cl.scrollTop=cl.scrollHeight;
@@ -259,14 +275,16 @@ document.addEventListener('pointerdown',()=>{if(bellOn&&!actx){try{actx=new (win
 $('nick').addEventListener('input',e=>{nick=clip(e.target.value);ls.set('sl.nick',nick);clearTimeout(act.n);act.n=setTimeout(()=>{if(conn&&conn.open)conn.send({type:'act',t:'nick',d:{nick}})},600);if(isHost&&S){const i=seatOf(myKey);if(i>=0&&nick){S.seats[i].name=nick;}S.host=nick;clearTimeout(act.t);act.t=setTimeout(commit,800)}});
 function onAct(b){const a=b.dataset.a;if(a==='play'){if(pend)return;const c=b.dataset.c;if(!OKC.test(c))return;if(!isHost){pend=c;setTimeout(()=>{pend=null;render()},6000)}act('mv',{c});render()}
  else if(a==='join'){if(!nick){toast('Type your name at the top first');$('nick').focus();return}act('join',{})}
- else if(a==='host'){code=Math.random().toString(36).slice(2,8);ls.set('sl.host.'+code,'1');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';startHost()}
- else if(a==='reopen'){code=ls.get('sl.lasthost');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';startHost()}
+ else if(a==='host'){code=Math.random().toString(36).slice(2,8);ls.set('sl.host.'+code,'1');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';claim(fresh())}
+ else if(a==='reopen'){code=ls.get('sl.lasthost');history.replaceState(null,'','?t='+code);$('mid').innerHTML='';claim(saved()||fresh())}
+ else if(a==='leave'){if(Date.now()-(onAct.lv||0)>5000){onAct.lv=Date.now();toast('Tap “Leave table” again to confirm');return}leaveTable()}
+ else if(a==='newtable'){if(Date.now()-(onAct.sure||0)>5000){onAct.sure=Date.now();toast('Tap again to confirm — you’ll leave this table and get a new link');return}onAct.sure=0;newTable()}
  else if(a==='copy'){const l=$('ilink').textContent;(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(()=>toast('Link copied — paste it in WhatsApp'),()=>toast('Press and hold the link to copy it'))}
  else if(a==='rx')act('rx',{e:b.dataset.e});else hostDo(a,+b.dataset.i)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)onAct(b)});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.a==='play'){e.preventDefault();onAct(e.target)}});
 $('chat').addEventListener('submit',e=>{e.preventDefault();const t=$('msg').value.trim();if(!t)return;act('ch',{text:t});$('msg').value=''});
 if(!window.Peer){S=null;$('status').textContent='Couldn’t load the game’s connection code — check your internet and reload.'}
-else if(!code)landing();else if(ls.get('sl.host.'+code)==='1')startHost();else startGuest();
+else if(!code)landing();else if(ls.get('sl.host.'+code)==='1')claim(saved()||fresh());else startGuest();
 }</script>
 </body></html>
