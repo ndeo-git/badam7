@@ -160,6 +160,9 @@ function hostDo(a,v){if(!isHost||!S)return;
  else return;commit()}
 /* ---- networking: host-authoritative over PeerJS (WebRTC), with host hand-off ---- */
 const PREFIX='sattilavani-';
+/* Optional relay for networks that block direct phone-to-phone links (free at metered.ca → Open Relay). Paste the username/password here. */
+const TURN_USER='',TURN_PASS='';
+const PEER_OPTS={debug:0,config:{iceServers:[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302']},{urls:['turn:eu-0.turn.peerjs.com:3478','turn:us-0.turn.peerjs.com:3478'],username:'peerjs',credential:'peerjsp'}].concat(TURN_USER?[{urls:['stun:stun.relay.metered.ca:80','turn:standard.relay.metered.ca:80','turn:standard.relay.metered.ca:80?transport=tcp','turn:standard.relay.metered.ca:443','turns:standard.relay.metered.ca:443?transport=tcp'],username:TURN_USER,credential:TURN_PASS}]:[])}};
 let code=(new URLSearchParams(location.search).get('t')||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
 let peer=null,conn=null,conns=new Map(),saveT=null,lostAt=0,claiming=false;
 const saved=()=>{try{const v=JSON.parse(ls.get('sl.state.'+code)||'null');return v&&Array.isArray(v.seats)?v:null}catch(e){return null}};
@@ -179,16 +182,16 @@ function wireHost(p){p.on('connection',c=>{conns.set(c,null);c.on('data',d=>host
  p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}})}
 function claim(state){if(claiming)return;claiming=true;netStatus('Opening the table…');
  try{conn&&conn.close()}catch(e){}conn=null;try{peer&&peer.destroy()}catch(e){}peer=null;
- const p=new Peer(PREFIX+code,{debug:0});peer=p;
+ const p=new Peer(PREFIX+code,PEER_OPTS);peer=p;
  p.on('open',()=>{if(peer!==p)return;claiming=false;isHost=true;got=true;S=state||fresh();S.chat=S.chat||[];S.host=nick||'Host';
   if(S.phase==='play'&&S.hands.some(h=>h.some(c=>!OKC.test(c)))){S.phase='lobby';emptyBoard();S.log='Round restarted — the host left mid-round'}
   ls.set('sl.host.'+code,'1');ls.set('sl.lasthost',code);setOnline();wireHost(p);showInvite();keepAwake();netStatus('');commit()});
  p.on('error',e=>{if(peer!==p)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}peer=null;claiming=false;if(!isHost)startGuest()}else if(isHost)netStatus('Connection trouble — retrying…')})}
 function startGuest(){isHost=false;if(!S)S=fresh();render();netStatus('Connecting to the table…');lostAt=Date.now();
- const p=new Peer({debug:0});peer=p;p.on('open',()=>{if(peer===p)connect()});
+ const p=new Peer(PEER_OPTS);peer=p;setTimeout(()=>{if(peer===p&&!p.open)netStatus('Can’t reach the game server — check your internet connection.')},10000);p.on('open',()=>{if(peer===p){netStatus('Found the game server — reaching the host…');connect()}});
  p.on('disconnected',()=>{if(peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}});
  p.on('error',e=>{if(peer!==p)return;if(e.type==='peer-unavailable')netStatus(S.seats.length?'The host left — the table will reopen in a moment…':'This table isn’t open right now. Retrying…');else netStatus('Connection trouble — retrying…')})}
-function connect(){if(!peer||!peer.open||(conn&&conn.open))return;try{conn&&conn.close()}catch(e){}const c=peer.connect(PREFIX+code,{reliable:true});conn=c;
+function connect(){if(!peer||!peer.open||(conn&&conn.open))return;try{conn&&conn.close()}catch(e){}const c=peer.connect(PREFIX+code,{reliable:true});conn=c;const blocked=()=>{if(conn===c&&!c.open)netStatus('Found the table but can’t reach the host’s device directly — your network may be blocking it. Try switching between Wi-Fi and mobile data.')};setTimeout(blocked,15000);c.on('iceStateChanged',st=>{if(st==='failed')blocked()});
  c.on('open',()=>{if(conn!==c)return;lostAt=0;netStatus('');c.send({type:'hello',pid,nick})});
  c.on('data',d=>{if(conn!==c||!d)return;
   if(d.type==='state'&&d.S&&Array.isArray(d.S.seats)){S=d.S;got=true;online=new Set(Array.isArray(S.online)?S.online:[]);if(pend&&(S.phase!=='play'||S.turn!==seatOf(myKey)))pend=null;render()}
