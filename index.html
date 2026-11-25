@@ -24,7 +24,7 @@ header span{color:var(--mut);font-size:15px}
 .name{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:14px;color:var(--mut)}
 input{font:16px Mukta,sans-serif;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--pan);color:var(--ink);min-height:44px}
 .name input{width:9.5em}
-.felt{background:radial-gradient(120% 90% at 50% 0%,var(--felt2),var(--felt));border-radius:18px;padding:clamp(10px,2.4vw,20px);box-shadow:inset 0 0 0 2px #0002,0 10px 30px -14px #5c153088;position:relative}
+.felt{z-index:1;background:radial-gradient(120% 90% at 50% 0%,var(--felt2),var(--felt));border-radius:18px;padding:clamp(10px,2.4vw,20px);box-shadow:inset 0 0 0 2px #0002,0 10px 30px -14px #5c153088;position:relative}
 #board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,2.5vw,18px);max-width:360px;margin:0 auto;padding-top:4px}
 .col{container-type:inline-size}
 .stack{position:relative;height:calc(12*20cqw + 118cqw)}
@@ -68,7 +68,12 @@ header .bell{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}he
 .hand .cd.ok{opacity:1;filter:none;cursor:pointer;outline:2.5px solid var(--gold);transform:translateY(-6px);animation:bob 1.6s ease-in-out infinite}
 .hand .cd.pend{opacity:.35;outline:2px dashed var(--gold)}
 .hand.mine .cd{opacity:1;filter:none}
-.hand.mine.turn .cd:not(.ok){opacity:.5}
+.hand.mine.turn .cd{cursor:pointer}.hand.mine.turn.hint .cd:not(.ok){opacity:.5}.hand.mine .cd.pend{opacity:.35}
+.felt{scroll-margin-top:60px}.hand{scroll-margin:130px 0 calc(128px + env(safe-area-inset-bottom))}
+#bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}#bar:empty{display:none}#passb{min-width:128px;background:#c3142d;letter-spacing:.04em}#passb.need{outline:3px solid var(--gold);outline-offset:2px}#bar .hintb{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}
+#turn{position:sticky;top:0;z-index:37;display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;margin:0 0 8px;padding:5px 14px;border-radius:0 0 14px 14px;background:#b3122a;color:#fff;font-weight:800;font-size:18px;line-height:1.25;text-align:center;box-shadow:0 4px 12px #0005}#turn[hidden]{display:none}#cd{flex:none;min-width:2.1em;padding:1px 8px;border-radius:999px;background:#fff;color:#b3122a;font-variant-numeric:tabular-nums}#cd:empty{display:none}#turn.low #cd{background:var(--gold);color:#2a1a00}
+.bad{position:fixed;z-index:70;display:grid;place-items:center;pointer-events:none;border-radius:10px;background:#c3142d44;color:#e4002b;font:800 44px/1 Mukta,sans-serif;text-shadow:0 0 4px #fff,0 0 8px #fff;animation:bad .8s ease-out both}@keyframes bad{0%{opacity:0;transform:scale(1.5)}15%{opacity:1;transform:none}35%{transform:translateX(-4px)}50%{transform:translateX(4px)}65%{transform:none}80%{opacity:1}100%{opacity:0}}@media(prefers-reduced-motion:reduce){.bad{animation:none}}
+.set{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}.set h3{font:800 16px Mukta,sans-serif;margin:0 0 6px}.srow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.srow>span{flex:1 0 100%;font-size:15px;color:var(--mut)}.srow button{min-height:40px;min-width:44px;padding:2px 10px;background:transparent;color:var(--ink);border:1px solid var(--line)}.srow button[aria-pressed=true]{background:var(--felt2);color:#fff;border-color:transparent}
 @keyframes bob{50%{transform:translateY(-9px)}}
 .panel{background:var(--pan);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0}
 .panel h2{font:400 22px/1.1 "Yatra One",serif;margin:0 0 8px}
@@ -91,7 +96,7 @@ body{padding-bottom:calc(118px + env(safe-area-inset-bottom))}
 #unread{position:absolute;top:-6px;right:-6px;background:#c3142d;color:#fff;font-size:11px;font-weight:800;border-radius:9px;padding:0 5px;line-height:18px}#unread:empty{display:none}
 #chatpanel{position:fixed;left:max(3vw,8px);right:max(3vw,8px);bottom:calc(112px + env(safe-area-inset-bottom));z-index:41;max-width:640px;margin:0 auto;background:var(--pan);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px -10px #0008;padding:10px 12px}
 .cph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-#bubbles{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top));z-index:39;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 12px}
+#bubbles{position:fixed;left:0;right:0;top:calc(62px + env(safe-area-inset-top));z-index:39;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 12px}
 .bub{max-width:min(92vw,520px);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:16px;font-size:15px;box-shadow:0 4px 12px #0005;animation:bub 5s ease forwards}.bub b{color:var(--gold)}
 #declp:not(:empty){position:fixed;left:max(3vw,8px);right:max(3vw,8px);bottom:calc(112px + env(safe-area-inset-bottom));z-index:42;max-width:640px;margin:0 auto}#declp .decl{box-shadow:0 10px 30px -8px #000a;margin:0}
 @keyframes bub{0%{opacity:0;transform:translateY(-10px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
@@ -109,15 +114,17 @@ body{padding-bottom:calc(118px + env(safe-area-inset-bottom))}
 :root[data-theme=dark] #chatlog b{color:var(--gold)}
 form{display:flex;gap:8px}form input{flex:1}
 .note{color:var(--mut);font-size:14px}
-#toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast{position:fixed;z-index:60;left:50%;bottom:calc(122px + env(safe-area-inset-bottom));width:max-content;max-width:92vw;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:10px;font-size:15px;opacity:0;transition:opacity .3s;pointer-events:none}
 #toast.show{opacity:1}
 </style></head><body>
 <div class="wrap">
 <header><h1>सत्ती लावणी</h1><span>Satti Lavani · Badam 7</span>
 <button type="button" id="bell" class="alt bell" aria-pressed="true">🔔 Bell on</button><label class="name">Your name <input id="nick" maxlength="18" placeholder="e.g. Nikhil" autocomplete="nickname"></label></header>
+<div id="turn" hidden><span id="turnt" aria-live="polite"></span><span id="cd" aria-hidden="true"></span></div>
 <div class="felt"><div id="board"></div><div id="rx" aria-live="polite"></div><div id="passed" aria-live="assertive"></div></div>
 <div id="status">Opening the table…</div>
 <div id="declp"></div>
+<div id="bar"></div>
 <div id="hand" class="hand"></div>
 <div class="players" id="players"></div>
 <div id="log"></div>
@@ -143,7 +150,10 @@ const clip=s=>String(s||'').trim().slice(0,18);
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 let pid=ls.get('sl.pid');if(!pid){pid='p'+Math.random().toString(36).slice(2,10);ls.set('sl.pid',pid)}
 let nick=ls.get('sl.nick')||'',myKey=pid,S=null,isHost=false,got=false,online=new Set(),pend=null,lastRx=0,myN=0,msg='';
-const fresh=()=>({phase:'lobby',seats:[],hands:[],rows:{S:null,H:null,D:null,C:null},turn:0,turnAt:0,first:true,last:null,log:'',scores:[],lastPts:[],round:0,lastBy:{},hist:[],seq:{},chat:[],rx:null,host:''});
+const DEF={hints:true,think:2,timer:20};
+const fresh=()=>({phase:'lobby',seats:[],hands:[],rows:{S:null,H:null,D:null,C:null},turn:0,turnAt:0,first:true,last:null,log:'',scores:[],lastPts:[],round:0,lastBy:{},hist:[],seq:{},chat:[],rx:null,host:'',mv:0,set:{...DEF}});
+const THINK=[1,2,3,4,5],TIMER=[0,15,20,30,45,60],cfg=()=>({...DEF,...(S&&S.set||{})});
+const hintsOn=()=>{const o=ls.get('sl.hints');return o==='1'?true:o==='0'?false:cfg().hints!==false};
 const clone=o=>JSON.parse(JSON.stringify(o));
 
 function legal(c){if(!OKC.test(c))return false;const{r,s}=pc(c);if(S.first)return c==='7H';const row=S.rows[s];if(r===7)return!row;return!!row&&(r===row[0]-1||r===row[1]+1)}
@@ -155,20 +165,21 @@ const nameOf=i=>S.seats[i]?S.seats[i].name:'?';
 function play(i,c){const h=S.hands[i],j=h.indexOf(c);if(j<0||!legal(c))return false;h.splice(j,1);const{r,s}=pc(c),row=S.rows[s];
  S.rows[s]=row?[Math.min(row[0],r),Math.max(row[1],r)]:[7,7];S.first=false;S.last={i,c};S.log=nameOf(i)+' played '+RN[r]+SYM[s];note(i,c);if(S.seats[i].bot&&h.length>=1&&h.length<=2)declare(i,h.every(legal)?'sure':'unsure');
  if(!h.length)endRound(i);else nextTurn(i);return true}
-function note(i,c){S.lastBy=S.lastBy||{};S.lastBy[i]=c;S.hist=(S.hist||[]).concat([{i,c}]).slice(-8)}
+function note(i,c){S.mv=(S.mv||0)+1;S.lastBy=S.lastBy||{};S.lastBy[i]=c;S.hist=(S.hist||[]).concat([{i,c}]).slice(-8)}
 function pass(i){S.last={i,pass:true};note(i,'pass');S.log=nameOf(i)+' passed';nextTurn(i)}
-function nextTurn(i){S.turn=(i+1)%S.seats.length;S.turnAt=Date.now()}
+function nextTurn(i){S.turn=(i+1)%S.seats.length;S.turnAt=now()}
 function endRound(w){S.phase='over';S.winner=w;S.lastPts=S.hands.map(h=>h.reduce((a,c)=>a+pts(c),0));S.lastPts.forEach((p,i)=>S.scores[i]=(S.scores[i]||0)+p);S.log=nameOf(w)+' finished first!'}
 function emptyBoard(){S.hands=[];S.rows={S:null,H:null,D:null,C:null};S.last=null;S.first=true;S.lastBy={};S.hist=[];S.decl={};S.ann=null}
 function deal(){const n=S.seats.length;if(n<3||n>8)return;const d=[];for(const s of SU)for(let r=1;r<=13;r++)d.push(r+s);
  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
  emptyBoard();S.hands=S.seats.map(()=>[]);d.forEach((c,i)=>S.hands[i%n].push(c));while(S.scores.length<n)S.scores.push(0);
- S.phase='play';S.round++;S.turn=S.hands.findIndex(h=>h.includes('7H'));S.turnAt=Date.now();S.log='Round '+S.round+' — '+nameOf(S.turn)+' opens with 7♥'}
+ S.phase='play';S.round++;S.turn=S.hands.findIndex(h=>h.includes('7H'));S.turnAt=now();S.log='Round '+S.round+' — '+nameOf(S.turn)+' opens with 7♥'}
 function botPick(h){let best=null,bs=-1e9;for(const c of h.filter(legal)){const{r,s}=pc(c),mine=h.filter(x=>pc(x).s===s&&x!==c).map(x=>pc(x).r);let sc=pts(c)/10;
  if(r===7)sc+=mine.length*1.5-1;else sc+=(r<7?mine.filter(x=>x<r):mine.filter(x=>x>r)).length*2;if(sc>bs){bs=sc;best=c}}return best}
 function apply(k,t,d){const i=seatOf(k),who=i>=0?nameOf(i):clip(d.nick)||'Guest';
  if(t==='join'){if(S.phase!=='lobby'||i>=0||S.seats.length>=8)return;S.seats.push({k,name:clip(d.nick)||'Player'});S.scores.push(0)}
- else if(t==='mv'){if(S.phase==='play'&&i>=0&&i===S.turn)play(i,String(d.c))}
+ else if(t==='mv'||t==='pass'){if(S.phase!=='play'||i<0||i!==S.turn||(d.n!=null&&d.n!==(S.mv||0)))return;/* n = move number the player saw, so a late tap can't count for a later turn */
+  if(t==='mv')play(i,String(d.c));else if(!moves(i).length)pass(i)}
  else if(t==='ch'){const tx=String(d.text||'').trim().slice(0,200);if(!tx)return;S.chat.push({w:who,t:tx,at:Date.now()});if(S.chat.length>40)S.chat.splice(0,S.chat.length-40)}
  else if(t==='rx'){if(EMO.includes(d.e))S.rx={w:who,e:d.e,at:Date.now()}}
  else if(t==='decl'){const n=i>=0?(S.hands[i]||[]).length:0;if(S.phase==='play'&&n>=1&&n<=2)declare(i,d.s==='sure'?'sure':'unsure')}}
@@ -177,6 +188,7 @@ function hostDo(a,v){if(!isHost||!S)return;
  if(a==='bot'){if(S.seats.length>=8||S.phase!=='lobby')return;const used=new Set(S.seats.map(x=>x.name));S.seats.push({k:'bot'+Date.now(),name:(BOTN.find(n=>!used.has(n+' (AI)'))||'Bot')+' (AI)',bot:true});S.scores.push(0)}
  else if(a==='rm'){if(S.phase!=='lobby')return;S.seats.splice(v,1);S.scores.splice(v,1)}
  else if(a==='deal')deal();
+ else if(a==='set'){if(S.phase==='play')return;const{f,v:x}=v;if(f==='hints')S.set={...cfg(),hints:x===1};else if(f==='think'&&THINK.includes(x))S.set={...cfg(),think:x};else if(f==='timer'&&TIMER.includes(x))S.set={...cfg(),timer:x};else return}
  else if(a==='lobby'){S.phase='lobby';emptyBoard();S.log='Back to the lobby'}
  else if(a==='reset'){S.phase='lobby';emptyBoard();S.scores=S.seats.map(()=>0);S.round=0;S.log='New game — scores cleared'}
  else return;commit()}
@@ -185,6 +197,7 @@ function hostDo(a,v){if(!isHost||!S)return;
 const FIREBASE_CONFIG={apiKey:"AIzaSyB-AgTdLsovWlfc8xIvSJGMA6azeXGHWF0",authDomain:"badam7-90b56.firebaseapp.com",databaseURL:"https://badam7-90b56-default-rtdb.firebaseio.com",projectId:"badam7-90b56",storageBucket:"badam7-90b56.firebasestorage.app",messagingSenderId:"160409091789",appId:"1:160409091789:web:7506c82ca66aae3a747384"};
 let code=(new URLSearchParams(location.search).get('t')||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,12);
 let db=null,base=null,hostRef=null,actsRef=null,remoteS=null,offset=0,loaded=false,hostV=null,hostOk=0;
+const PV=2;let onV={};/* page version in presence: pages older than 2 have no Pass button, so the host still passes for them */
 const now=()=>Date.now()+offset;
 const netStatus=t=>{$('net').textContent=t};
 function commit(){render();if(!isHost||!base)return;if(now()-hostOk>15000){hostTick();return}S.upd=now();base.child('state').set(JSON.stringify(S)).catch(()=>toast('Could not save — check your connection'))}
@@ -194,16 +207,16 @@ function hostTick(){if(!hostRef||!loaded)return;hostRef.transaction(cur=>{const 
 function onQueued(snap){const a=snap.val()||{};snap.ref.remove();if(!isHost)return;const k=clip(a.k);if(!k)return;const d=a.d&&typeof a.d==='object'?a.d:{},nk=clip(a.nick);
  if(a.t==='nick'){const i=seatOf(k);if(i>=0&&nk&&!S.seats[i].bot)S.seats[i].name=nk}
  else if(a.t==='leave')leaveSeat(k);
- else if(['join','mv','ch','rx','decl'].includes(a.t))apply(k,a.t,{...d,nick:nk});else return;commit()}
-function becomeHost(){isHost=true;got=true;netStatus('');S=remoteS&&Array.isArray(remoteS.seats)?clone(remoteS):fresh();S.chat=S.chat||[];S.host=nick||'Host';
+ else if(['join','mv','pass','ch','rx','decl'].includes(a.t))apply(k,a.t,{...d,nick:nk});else return;commit()}
+function becomeHost(){isHost=true;got=true;netStatus('');S=remoteS&&Array.isArray(remoteS.seats)?clone(remoteS):fresh();S.chat=S.chat||[];S.set=cfg();if(S.phase==='play')S.turnAt=now();S.host=nick||'Host';
  hostRef.onDisconnect().remove();actsRef.on('child_added',onQueued);
  if(ls.get('sl.autoseat.'+code)==='1'){ls.set('sl.autoseat.'+code,'');if(seatOf(pid)<0)apply(pid,'join',{nick})}
  keepAwake();commit()}
 function stepDown(){isHost=false;actsRef.off('child_added',onQueued);try{hostRef.onDisconnect().cancel()}catch(e){}if(remoteS)S=remoteS;render()}
 function startTable(){base=db.ref('t/'+code);hostRef=base.child('host');actsRef=base.child('acts');S=fresh();render();showInvite();netStatus('Connecting…');
  const me=base.child('online/'+pid);
- db.ref('.info/connected').on('value',s=>{if(s.val()===true){me.onDisconnect().remove();me.set({nick:nick||'',at:firebase.database.ServerValue.TIMESTAMP});netStatus(hostV?'':'Opening the table…');setTimeout(hostTick,300)}else netStatus('Reconnecting…')});
- base.child('online').on('value',s=>{online=new Set(Object.keys(s.val()||{}));if(!isHost)render()});
+ db.ref('.info/connected').on('value',s=>{if(s.val()===true){me.onDisconnect().remove();me.set({nick:nick||'',v:PV,at:firebase.database.ServerValue.TIMESTAMP});netStatus(hostV?'':'Opening the table…');setTimeout(hostTick,300)}else netStatus('Reconnecting…')});
+ base.child('online').on('value',s=>{onV=s.val()||{};online=new Set(Object.keys(onV));if(!isHost)render()});
  hostRef.on('value',s=>{hostV=s.val();if(isHost){if(hostV&&hostV.k!==pid)stepDown();return}netStatus(hostV?'':(loaded&&S.seats.length?'The host stepped away — someone will take over in a few seconds…':'Waiting for the host to open the table…'))});
  base.child('state').on('value',snap=>{const v=snap.val();let st=null;try{st=typeof v==='string'?JSON.parse(v):null}catch(e){}if(st&&!Array.isArray(st.seats))st=null;remoteS=st;
   const first=!loaded;loaded=true;
@@ -225,12 +238,17 @@ function leaveTable(){quit(()=>{location.href=location.pathname})}
 function newTable(){const seated=!S||seatOf(pid)>=0||!S.seats.length;quit(()=>goTable(newCode(),seated))}
 function landing(){const last=ls.get('sl.lasthost');$('status').textContent='Start a table, then share the link on WhatsApp';
  $('mid').innerHTML=`<div class="panel"><h2>Host a game</h2><p>Start a table on this phone or computer, then send the invite link to the family. Nobody needs an account.</p><div class="btns"><button data-a="host">Start a new table</button>${last?`<button class="alt" data-a="reopen">Reopen my last table</button>`:''}</div><p class="note">Got a link from someone? Just open it — it brings you straight to their table.</p></div>`}
-const awayT={};
-setInterval(()=>{if(!isHost||!S||S.phase!=='play'||now()-hostOk>15000)return;const i=S.turn,x=S.seats[i];if(!x)return;
- const age=Date.now()-S.turnAt,away=!x.bot&&!online.has(x.k)&&x.k!==myKey;
- if(!moves(i).length){if(age>1300){pass(i);commit()}return}
- if(away)awayT[x.k]=awayT[x.k]||Date.now();else delete awayT[x.k];
- if((x.bot&&age>1400)||(away&&age>(Date.now()-awayT[x.k]>30000?1400:8000))){const c=botPick(S.hands[i]);if(c){play(i,c);if(away)S.log+=' (AI stood in)';commit()}}},500);
+const awayT={};let tickAt=0,hold=0;
+setInterval(()=>{const t=now();if(t-tickAt>3000)hold=t+2500;tickAt=t;/* just woke up: let queued taps arrive before any timeout */
+ if(!isHost||!S||S.phase!=='play'||t<hold||t-hostOk>15000)return;const i=S.turn,x=S.seats[i];if(!x)return;
+ const age=t-S.turnAt,away=!x.bot&&!online.has(x.k)&&x.k!==myKey,can=moves(i).length>0,o=cfg();let due=Infinity,why='';
+ if(away)awayT[x.k]=awayT[x.k]||t;else delete awayT[x.k];
+ if(x.bot)due=o.think*1000;
+ else if(away){due=t-awayT[x.k]>30000?1400:8000;why='away'}
+ else{if(o.timer){due=o.timer*1000+1000;why='time'}if(!can&&x.k!==myKey&&!((onV[x.k]||{}).v>=2)){due=1300;why='old'}}
+ if(age<due)return;
+ if(can){const c=botPick(S.hands[i]);if(!c||!play(i,c))return;if(away)S.log+=' (AI stood in)'}else pass(i);
+ if(why&&S.last)S.last.auto=why;commit()},250);
 
 /* ---- player actions ---- */
 function act(t,d){if(isHost){apply(pid,t,{...d,nick});pend=null;commit();return}
@@ -247,45 +265,65 @@ function fly(i,c,mine){const chip=document.querySelector(`#players [data-p="${i}
  const a=src.getBoundingClientRect(),b=el.getBoundingClientRect(),dx=a.left+a.width/2-(b.left+b.width/2),dy=a.top+a.height/2-(b.top+b.height/2),rot=(i%2?1:-1)*(160+Math.random()*120);
  el.style.zIndex=50;const an=el.animate([{transform:`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(.55)`,opacity:.4},{transform:`translate(${dx*.25}px,${dy*.25-30}px) rotate(${rot*.15}deg) scale(1.15)`,opacity:1,offset:.7},{transform:'none',opacity:1}],{duration:750,easing:'cubic-bezier(.2,.75,.25,1)'});
  an.onfinish=()=>{el.style.zIndex=pc(c).r+1};if(chip)chip.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:300})}
+const audio=()=>{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx};
+function tones(list,type='sine',vol=.3,len=.6){if(!bellOn)return;try{const x=audio(),t=x.currentTime;list.forEach(([f,d,l=len])=>{const o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(vol,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+l);o.connect(g).connect(x.destination);o.start(t+d);o.stop(t+d+l+.1)})}catch(e){}}
+const buzz=()=>tones([[170,0],[130,.16]],'square',.16,.2),tickS=()=>tones([[1050,0]],'square',.09,.06);
+function bad(el,m){const r=el.getBoundingClientRect(),x=document.createElement('div');x.className='bad';x.textContent='✗';x.style.cssText=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;document.body.appendChild(x);setTimeout(()=>x.remove(),800);buzz();if(navigator.vibrate)try{navigator.vibrate(90)}catch(e){}if(m)toast(m)}
 let bellOn=ls.get('sl.bell')!=='0',actx=null,prevCnt=null,prevRound=-1;
-function ding(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;[[880,0],[1320,.18]].forEach(([f,d])=>{const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.35,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+1.2);o.connect(g).connect(actx.destination);o.start(t+d);o.stop(t+d+1.3)})}catch(e){}}
+const ding=()=>tones([[880,0],[1320,.18]],'sine',.35,1.2);
 function bellCheck(){if(S.phase!=='play'){prevCnt=null;return}const cnt=S.seats.map((x,i)=>(S.hands[i]||[]).length);if(prevCnt&&prevRound===S.round){const hit=cnt.findIndex((n,i)=>n===2&&prevCnt[i]>2);if(hit>=0){if(bellOn)ding();toast('🔔 '+nameOf(hit)+' has only 2 cards left!')}}prevCnt=cnt;prevRound=S.round}
 const chipBadge=i=>{if(S.phase!=='play')return'';const n=(S.hands[i]||[]).length;if(n<1||n>2)return'';const d=(S.decl||{})[i];if(d&&d.n===n)return`<span class="${d.s}">${n} left · ${d.s==='sure'?'Sure':'Not sure'}</span>`;return`<span class="two">${n} left!</span>`};
 let lastAnn=0,lastChat=null,lastHist='',unread=0;
 function bubble(html){const b=document.createElement('div');b.className='bub';b.innerHTML=html;const box=$('bubbles');box.appendChild(b);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>b.remove(),5100)}
-function ding3(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;[[988,0],[1319,.12],[1760,.24]].forEach(([f,d])=>{const o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.3,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+.6);o.connect(g).connect(actx.destination);o.start(t+d);o.stop(t+d+.7)})}catch(e){}}
+const ding3=()=>tones([[988,0],[1319,.12],[1760,.24]],'triangle');
+
+/* changes on every play or pass (hist itself is capped, so its length is not enough) */
+const moveKey=()=>{const l=(S.hist||[]).slice(-1)[0];return[S.round,S.mv||0,(S.hist||[]).length,l?l.i+l.c:''].join(':')};
+let tickSec=-1;
+function banner(){const b=$('turn');if(!S||S.phase!=='play'||!S.seats[S.turn]){b.hidden=true;return}
+ const i=S.turn,x=S.seats[i],mine=seatOf(myKey),me=i===mine,up=x.bot||online.has(x.k)||x.k===myKey;let cls='',left=null;
+ const tx=me?hintsOn()?(moves(i).length?'Your turn — tap a glowing card':'No card fits — press Pass'):'Your turn':up?x.name+'’s turn':x.name+' is away — AI will play';
+ if(!x.bot&&up&&S.set&&S.set.timer){left=Math.max(0,Math.min(S.set.timer,Math.ceil((S.turnAt+S.set.timer*1000-now())/1000)));if(left<=5)cls+=' low';
+  if(me&&!pend&&left>=1&&left<=5&&left!==tickSec)tickS();tickSec=left}
+ b.hidden=false;b.className=cls;if($('turnt').textContent!==tx)$('turnt').textContent=tx;const ct=left===null?'':left+'s';if($('cd').textContent!==ct)$('cd').textContent=ct}
+setInterval(banner,250);
+function setPanel(){const o=cfg(),tm=v=>v?v+' s':'Off';if(!isHost)return`<p class="note">Table settings: hints ${o.hints?'on':'off'} · AI thinks ${o.think} s · turn timer ${o.timer?o.timer+' s':'off'}</p>`;
+ const row=(l,f,vs,cur,nm)=>`<div class="srow" role="group" aria-label="${l}"><span>${l}</span>${vs.map(v=>`<button type="button" data-a="set" data-f="${f}" data-v="${v}" aria-pressed="${v===cur}">${nm(v)}</button>`).join('')}</div>`;
+ return`<div class="set"><h3>Table settings</h3>${row('Hints (each player can override)','hints',[1,0],o.hints?1:0,v=>v?'On':'Off')}${row('AI think time','think',THINK,o.think,v=>v+' s')}${row('Turn timer','timer',TIMER,o.timer,tm)}</div>`}
 function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.last&&S.last.c;
  const bsig=JSON.stringify([S.rows,S.last,S.round]);
  if(bsig!==boardSig){boardSig=bsig;$('board').innerHTML=SU.map(s=>{const row=S.rows[s];let h=`<span class="ph" style="--i:6">7${SYM[s]}</span>`;
   if(row)for(let r=row[0];r<=row[1];r++){const c=r+s,hot=c===last;h+=`<span class="pc ${red(s)?'r':''} ${hot?'hot':''}" data-c="${c}" style="--i:${r-1};z-index:${r+1}${hot?';--pc:'+pcol(S.last.i):''}"><b>${RN[r]}${SYM[s]}</b><i>${SYM[s]}</i>${hot?`<em class="who ${r===row[1]?'btm':''}">${esc(nameOf(S.last.i))}</em>`:''}</span>`}
   return`<div class="col" aria-label="${s} pile"><div class="stack">${h}</div></div>`}).join('')}
- const ak=S.round+':'+(S.hist||[]).length;if(ak!==animKey){const prev=animKey;animKey=ak;const hl=(S.hist||[]).slice(-1)[0];if(prev!==null&&got&&hl&&S.phase!=='lobby'&&!rm.matches)requestAnimationFrame(()=>fly(hl.i,hl.c,mine))}
+ const ak=moveKey();if(ak!==animKey){const prev=animKey;animKey=ak;const hl=(S.hist||[]).slice(-1)[0];if(prev!==null&&got&&hl&&S.phase!=='lobby'&&!rm.matches)requestAnimationFrame(()=>fly(hl.i,hl.c,mine))}
  $('players').innerHTML=S.seats.map((x,i)=>{const up=x.bot||online.has(x.k)||x.k===myKey;const cnt=S.phase==='lobby'?'':((S.hands[i]||[]).length===1?'1 card':(S.hands[i]||[]).length+' cards')+' · ';
   return`<div class="pl ${S.phase==='play'&&S.turn===i?'on':''}" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${cnt}${S.scores[i]||0} pts</small>`:''}${chipBadge(i)}${lb(i)}</div>`}).join('');
  let st='',hint='';
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
- else if(S.phase==='play'){const x=S.seats[S.turn];if(S.turn===mine)st=moves(mine).length?'Your turn — tap a glowing card':'No card fits — passing for you…';else st=x?esc(x.name)+(x.bot?' is thinking…':online.has(x.k)?'’s turn':' is away — AI will play in a moment'):'';}
- else st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
- $('status').innerHTML=st;$('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
- {const hk=S.round+':'+(S.hist||[]).length,hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?'Your turn was passed — no card fits':esc(nameOf(hl.i))+' had no card'}</small></div>`;void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
+ else if(S.phase==='over')st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
+ $('status').innerHTML=st;$('status').hidden=!st;banner();
+ {const my=S.phase==='play'&&mine>=0,tn=my&&S.turn===mine,o=ls.get('sl.hints');$('bar').innerHTML=my?`<button type="button" id="passb" data-a="pass" class="${tn&&!pend&&hintsOn()&&!moves(mine).length?'need':''}" ${tn&&!pend?'':'disabled'}>Pass</button><button type="button" class="alt hintb" data-a="hints">💡 Hints: ${o==='1'?'on':o==='0'?'off':'table ('+(hintsOn()?'on':'off')+')'}</button>`:''}
+ $('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
+ {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';const au=S.last&&S.last.i===hl.i&&S.last.auto;pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?(au==='time'?'Time’s up — no card fits':au?'Your turn was passed — no card fits':'You passed'):esc(nameOf(hl.i))+(au==='time'?' ran out of time':' had no card')}</small></div>`;clearTimeout(pz.t);pz.t=setTimeout(()=>pz.classList.remove('show'),me?3400:1800);void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
  if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&Date.now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
  {const ch=S.chat||[],mx=ch.reduce((a,c)=>Math.max(a,c.at||0),0);if(lastChat===null){if(got)lastChat=mx}else if(mx>lastChat){for(const c of ch.filter(c=>c.at>lastChat).slice(-3)){bubble(`<b>${esc(c.w)}</b>: ${esc(c.t)}`);if($('chatpanel').hidden)unread++}lastChat=mx;$('unread').textContent=unread?String(unread):''}}
  const dp=$('declp');const myn=mine>=0?(S.hands[mine]||[]).filter(c=>OKC.test(c)).length:0,md=(S.decl||{})[mine];
  dp.innerHTML=S.phase==='play'&&mine>=0&&myn>=1&&myn<=2&&!(md&&md.n===myn)?`<div class="decl"><b>You have ${myn} card${myn>1?'s':''} left — call it!</b><button data-a="decl" data-s="sure">Sure ✅</button><button class="alt" data-a="decl" data-s="unsure">Not sure 🤔</button></div>`:'';
  const hd=$('hand');hd.className='hand';
- {const tk=S.phase==='play'&&mine>=0&&S.turn===mine?S.round+':'+(S.hist||[]).length:'';if(tk&&tk!==render.tk&&got&&moves(mine).length)setTimeout(()=>{try{hd.scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},400);render.tk=tk}
+ {const pk=S.phase==='play'?S.round:0;if(pk&&pk!==render.pk&&got)setTimeout(()=>{try{document.querySelector('.felt').scrollIntoView({block:'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}},100);render.pk=pk}
+ {const tk=S.phase==='play'&&mine>=0&&S.turn===mine?moveKey():'';if(tk&&tk!==render.tk&&got)setTimeout(()=>{try{hd.scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},900);render.tk=tk}
  if(S.phase==='play'&&mine>=0){const my=(S.hands[mine]||[]).filter(c=>OKC.test(c)).slice().sort((a,b)=>SU.indexOf(pc(a).s)-SU.indexOf(pc(b).s)||pc(a).r-pc(b).r);
-  const turn=S.turn===mine;hd.classList.add('mine');if(turn)hd.classList.add('turn');let ps=null;
-  hd.innerHTML=my.map(c=>{const s=pc(c).s,g=ps&&ps!==s?'<span class="gap"></span>':'';ps=s;const cls=c===pend?'pend':turn&&!pend&&legal(c)?'ok':'';return g+(cls==='ok'?card(c,'ok').replace('<span','<span role="button" tabindex="0" data-a="play"'):card(c,cls))}).join('')}
+  const turn=S.turn===mine,hint=hintsOn();hd.classList.add('mine');if(turn)hd.classList.add('turn');if(hint)hd.classList.add('hint');let ps=null;
+  hd.innerHTML=my.map(c=>{const s=pc(c).s,g=ps&&ps!==s?'<span class="gap"></span>':'';ps=s;const cls=c===pend?'pend':hint&&turn&&!pend&&legal(c)?'ok':'';return g+(turn&&!pend?card(c,cls).replace('<span','<span role="button" tabindex="0" data-a="play"'):card(c,cls))}).join('')}
  else if(S.phase==='play')hd.innerHTML='<p class="note">You’re watching this round. Seats open between rounds.</p>';else hd.innerHTML='';
  let m='';
  if(S.phase==='lobby'){m=`<div class="panel"><h2>The table</h2><ol class="seats">${S.seats.map((x,i)=>`<li><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${isHost?`<button class="x" data-a="rm" data-i="${i}" aria-label="Remove ${esc(x.name)}">Remove</button>`:''}</li>`).join('')||'<li class="note">Nobody seated yet.</li>'}</ol>
   <div class="btns">${mine<0?`<button data-a="join" ${n>=8?'disabled':''}>Take a seat</button>`:''}${isHost?`<button class="alt" data-a="bot" ${n>=8?'disabled':''}>Add AI player</button><button data-a="deal" ${n<3?'disabled':''}>Deal cards</button>${S.round>0?'<button class="alt" data-a="reset">New game (clear scores)</button>':''}`:''}<button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>
-  <p class="note">${isHost?'You’re hosting. If you step away, another player takes over automatically. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p></div>`}
+  <p class="note">${isHost?'You’re hosting. If you step away, another player takes over automatically. 3–8 players.':'Waiting for '+(esc(S.host)||'the host')+' to deal. Type your name at the top first.'}</p>${setPanel()}</div>`}
  else if(S.phase==='over'){const ord=S.seats.map((x,i)=>i).sort((a,b)=>(S.scores[a]||0)-(S.scores[b]||0));
   m=`<div class="panel"><h2>Round ${S.round} scores</h2><table><thead><tr><th>Player</th><th class="n">Left</th><th class="n">This round</th><th class="n">Total</th></tr></thead><tbody>${ord.map(i=>`<tr><td>${esc(nameOf(i))}${i===S.winner?' 🏆':''}</td><td class="n">${(S.hands[i]||[]).length}</td><td class="n">${S.lastPts[i]||0}</td><td class="n"><b>${S.scores[i]||0}</b></td></tr>`).join('')}</tbody></table>
   <h2 class="lefth">Cards left in hand</h2><div class="left">${ord.map(i=>{const h=(S.hands[i]||[]).filter(c=>OKC.test(c)).slice().sort((x,y)=>SU.indexOf(pc(x).s)-SU.indexOf(pc(y).s)||pc(x).r-pc(y).r);return`<div class="lrow" style="border-left:5px solid ${pcol(i)}"><b>${esc(nameOf(i))}</b><span class="minis">${h.length?h.map(c=>`<span class="mini ${red(pc(c).s)?'rd':''}">${RN[pc(c).r]}${SYM[pc(c).s]}</span>`).join(''):'<em>Went out first 🏆</em>'}</span><small>${S.lastPts[i]||0} pts</small></div>`}).join('')}</div>
-  ${isHost?'<div class="btns"><button data-a="deal">Deal next round</button><button class="alt" data-a="lobby">Change players</button><button class="alt" data-a="reset">New game</button></div>':'<p class="note">Waiting for the host to deal the next round.</p>'}<div class="btns"><button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div></div>`}
+  ${isHost?'<div class="btns"><button data-a="deal">Deal next round</button><button class="alt" data-a="lobby">Change players</button><button class="alt" data-a="reset">New game</button></div>':'<p class="note">Waiting for the host to deal the next round.</p>'}${setPanel()}<div class="btns"><button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div></div>`}
  else m=`<div class="btns">${isHost?'<button class="x" data-a="lobby">Stop round</button>':''}${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>`;
  $('mid').innerHTML=m;
  const cl=$('chatlog'),atEnd=cl.scrollHeight-cl.scrollTop-cl.clientHeight<30;
@@ -298,9 +336,13 @@ $('emo').innerHTML=EMO.map(e=>`<button type="button" data-a="rx" data-e="${e}" a
 $('nick').value=nick;
 const bb=$('bell'),bset=()=>{bb.textContent=bellOn?'🔔 Bell on':'🔕 Bell off';bb.setAttribute('aria-pressed',bellOn)};bset();
 bb.addEventListener('click',()=>{bellOn=!bellOn;ls.set('sl.bell',bellOn?'1':'0');bset();if(bellOn)ding()});
-document.addEventListener('pointerdown',()=>{if(bellOn&&!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}},{once:true});
-$('nick').addEventListener('input',e=>{nick=clip(e.target.value);ls.set('sl.nick',nick);clearTimeout(act.n);act.n=setTimeout(()=>{if(base){base.child('online/'+pid).update({nick});if(!isHost&&seatOf(pid)>=0)actsRef.push({k:pid,t:'nick',d:{},nick})}},600);if(isHost&&S){const i=seatOf(myKey);if(i>=0&&nick){S.seats[i].name=nick;}S.host=nick;clearTimeout(act.t);act.t=setTimeout(commit,800)}});
-function onAct(b){const a=b.dataset.a;if(a==='play'){if(pend)return;const c=b.dataset.c;if(!OKC.test(c))return;if(!isHost){pend=c;setTimeout(()=>{pend=null;render()},6000)}act('mv',{c});render()}
+document.addEventListener('pointerdown',()=>{if(bellOn&&(!actx||actx.state==='suspended'))try{audio()}catch(e){}});
+$('nick').addEventListener('input',e=>{nick=clip(e.target.value);ls.set('sl.nick',nick);clearTimeout(act.n);act.n=setTimeout(()=>{if(base){base.child('online/'+pid).update({nick,v:PV});if(!isHost&&seatOf(pid)>=0)actsRef.push({k:pid,t:'nick',d:{},nick})}},600);if(isHost&&S){const i=seatOf(myKey);if(i>=0&&nick){S.seats[i].name=nick;}S.host=nick;clearTimeout(act.t);act.t=setTimeout(commit,800)}});
+function onAct(b){const a=b.dataset.a;if(a==='play'||a==='pass'){if(pend||!S||S.phase!=='play'||S.turn!==seatOf(myKey))return;const c=b.dataset.c,m=moves(S.turn);
+  if(a==='play'&&!OKC.test(c))return;if(a==='play'&&!legal(c)){bad(b);return}if(a==='pass'&&m.length){bad(b,'You must play if you can');return}
+  if(!isHost){const p=pend=a==='pass'?'pass':c;clearTimeout(act.p);act.p=setTimeout(()=>{if(pend===p){pend=null;render()}},6000)}if(a==='pass')act('pass',{n:S.mv||0});else act('mv',{c,n:S.mv||0});render()}
+ else if(a==='hints'){const o=ls.get('sl.hints');ls.set('sl.hints',o==='1'?'0':o==='0'?'':'1');render()}
+ else if(a==='set')hostDo('set',{f:b.dataset.f,v:+b.dataset.v})
  else if(a==='join'){if(!nick){toast('Type your name at the top first');$('nick').focus();return}act('join',{})}
  else if(a==='host')goTable(newCode(),true);
  else if(a==='reopen'){const c=ls.get('sl.lasthost');if(c)goTable(c,false)}
