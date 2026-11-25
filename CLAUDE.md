@@ -37,7 +37,7 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 - Fly-in animation from the player's chip. The last-played card is outlined in the player's color with a name tag. Per-seat colors.
 - Board with player chips around it on top, then the turn label and Pass, your hand, the points line, the Recent line and the invite box.
 - Bell at 2 cards, the Sure/Not-sure call banner and chime, and a big PASS stamp across the board (small one for other players).
-- Sticky slim header with 🔊 (mutes every game sound on that phone) and 💬 (opens a chat panel at the top: reactions, history, message box, unread count). Nothing is fixed at the bottom of the screen. Chat bubbles and messages show at the top.
+- Sticky slim header with 🔊 (mutes every game sound on that phone). Slim emoji line fixed at the bottom: one tap sends a reaction; 💬 opens the text box and history at the top of the screen (unread count on it). Chat bubbles and messages show at the top.
 - Round results: scores table plus each player's leftover cards.
 - Leave table, Start my own table, New game (clear scores), Change players, AI players (Aaji, Kaka…).
 - Respects `prefers-reduced-motion`. Mobile-first (≈390 px wide).
@@ -78,6 +78,13 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 5. Gentle tone when you play a card, "wrong answer" tone when you pass, heard only on your own phone.
 6. One 🔊/🔇 button replaces the Bell button and silences all game sounds (vibration is not affected).
 7. **Nothing may ever cover the Sure / Not sure buttons.** They sit in the page flow above the hand; messages go to the top of the screen.
+
+### Phase A.3 — third round of family feedback (done)
+
+1. **Moves settle before the next turn:** card lands, name tag goes away, then the red indicator, chime, unlocked cards and timer move to the next player (1.6 s after a play, 1.2 s after a pass). The host sets `turnAt` that far ahead (`SETTLE`); each phone gates on its own animation (`live()`). AI think time counts from there.
+2. **Finale:** the last card flies slowly (2.4 s) via the middle of the board, then stays highlighted with a "Final card!" caption before the winner show (4.8 s in all, 2.8 s with reduced motion).
+3. **Emoji line** at the bottom, one tap to send; 💬 opens the text box, ready to type, and closes after sending.
+4. Center cards grow when your hand needs only one row.
 
 ### Phase B — cards and players
 
