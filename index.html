@@ -46,9 +46,11 @@ input{font:16px Mukta,sans-serif;padding:8px 10px;border-radius:10px;border:1px 
 .slot.seven{border:1.5px solid #f2a90066;color:#f2a900aa}
 .cd.hot{outline:3px solid var(--gold);outline-offset:1px;animation:drop .35s ease-out}
 @keyframes drop{from{transform:translateY(-14px) scale(1.15);opacity:.3}}
-@media(prefers-reduced-motion:reduce){.cd.hot,.hand .cd.ok,#rx.show{animation:none}}
-#rx{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);background:#000a;color:#fff;padding:8px 18px;border-radius:30px;font-size:20px;font-weight:600;opacity:0;pointer-events:none;white-space:nowrap}
-#rx.show{animation:pop 2.6s ease-out}
+@media(prefers-reduced-motion:reduce){.cd.hot,.hand .cd.ok{animation:none}}
+/* flying reactions: above board, chips and the round show; below the emoji line and the Sure / Not sure buttons */
+#fx{position:fixed;inset:0;z-index:39;pointer-events:none;overflow:hidden}#fx>*{position:absolute;left:0;top:0;will-change:transform,opacity}
+.rxe{display:grid;justify-items:center;width:120px;margin:-34px 0 0 -60px;font-size:52px;line-height:1.1;text-shadow:0 3px 8px #0009}.rxe b{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--pc);color:#fff;font:800 14px/1.5 Mukta,sans-serif;padding:0 9px;border-radius:9px;border:2px solid #fff;box-shadow:0 2px 6px #0008;text-shadow:none}.rxt{width:60px;margin:-30px 0 0 -30px;font-size:38px;line-height:60px;text-align:center}.rxt.dot{width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--pc);box-shadow:0 0 10px 3px var(--pc)}
+.rxb{position:absolute;left:-7px;top:-8px;z-index:3;font-size:24px;line-height:1;filter:drop-shadow(0 1px 2px #0009);pointer-events:none}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
 .players{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .pl{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:6px 10px;display:flex;align-items:center;gap:7px;font-size:15px}
@@ -127,7 +129,7 @@ body{padding-bottom:calc(46px + env(safe-area-inset-bottom))}
 #passed.small .stamp b{font-size:clamp(34px,10vw,60px)}#passed.small .stamp{border-width:5px}
 @keyframes stamp{0%{opacity:0;transform:scale(2.4)}10%{opacity:1;transform:scale(.95)}14%{transform:scale(1)}82%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){#passed.show,#passed.small.show{animation:none;opacity:1}}
-#emo{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;background:var(--pan);border-top:1px solid var(--line);padding:0 4px env(safe-area-inset-bottom)}#emo[hidden]{display:none}#emo button{position:relative;flex:1;max-width:84px;min-height:44px;padding:0;background:transparent;color:var(--ink);border-radius:8px;font-size:24px;line-height:1}#emo button:active{background:var(--line);transform:scale(1.25)}
+#emo{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;background:var(--pan);border-top:1px solid var(--line);padding:0 4px env(safe-area-inset-bottom)}#emo[hidden]{display:none}#emo button{position:relative;flex:1;max-width:84px;min-height:44px;padding:0;background:transparent;color:var(--ink);border-radius:8px;font-size:24px;line-height:1}#emo button{touch-action:manipulation}#emo button:active{background:var(--line);transform:scale(1.25)}
 #chatlog{max-height:min(170px,24svh);margin-bottom:6px;overflow-y:auto;display:grid;gap:4px;font-size:15px;padding:2px}
 #chatlog p{margin:0}#chatlog b{color:var(--felt2)}
 :root[data-theme=dark] #chatlog b{color:var(--gold)}
@@ -140,7 +142,7 @@ form{display:flex;gap:8px}form input{flex:1}
 <button type="button" id="bell" class="hb"></button></header>
 <label class="name">Your name <input id="nick" maxlength="18" placeholder="e.g. Nikhil" autocomplete="nickname"></label>
 <span id="turnt" class="sr" aria-live="polite"></span>
-<div class="felt"><div id="chT" class="chips"></div><div id="board"></div><div id="chB" class="chips"></div><div id="rx" aria-live="polite"></div><div id="passed" aria-live="assertive"></div></div>
+<div class="felt"><div id="chT" class="chips"></div><div id="board"></div><div id="chB" class="chips"></div><span id="rx" class="sr" aria-live="polite"></span><div id="passed" aria-live="assertive"></div></div>
 <div id="status">Opening the table…</div>
 <div id="me"><div id="bar"></div>
 <div id="declp"></div>
@@ -152,6 +154,7 @@ form{display:flex;gap:8px}form input{flex:1}
 <div id="mid"></div>
 <section id="invite" class="panel" hidden><h2>Invite the family</h2><p class="note">Send this link. Anyone who opens it can join — no account needed. Anyone at the table can share it.</p><p id="ilink" class="ilink"></p><div class="btns"><a id="wa" class="btn" target="_blank" rel="noopener">Send on WhatsApp</a><button type="button" class="alt" data-a="copy">Copy link</button></div></section>
 <div id="show" role="dialog" aria-label="Round results" data-a="showtap" hidden></div>
+<div id="fx" aria-hidden="true"></div>
 <div id="tops"><div id="toast" role="status"></div><div id="bubbles" aria-live="polite"></div></div>
 <div id="chatpanel" hidden><div class="cph"><b>Table chat</b><button type="button" class="x" data-a="chatx">Close</button></div><div id="chatlog"></div><form id="chat"><input id="msg" maxlength="200" placeholder="Say something…" autocomplete="off" enterkeyhint="send"><button>Send</button></form></div>
 <div id="emo" role="toolbar" aria-label="Reactions and chat" hidden><button type="button" id="chatb" data-a="chatlog" aria-label="Write a message">💬<span id="unread"></span></button></div>
@@ -202,10 +205,10 @@ function apply(k,t,d){const i=seatOf(k),who=i>=0?nameOf(i):clip(d.nick)||'Guest'
  if(t==='join'){if(S.phase!=='lobby'||i>=0||S.seats.length>=8)return;S.seats.push({k,name:clip(d.nick)||'Player'});S.scores.push(0)}
  else if(t==='mv'||t==='pass'){if(S.phase!=='play'||i<0||i!==S.turn||(d.n!=null&&d.n!==(S.mv||0)))return;/* n = move number the player saw, so a late tap can't count for a later turn */
   if(t==='mv')play(i,String(d.c));else if(!moves(i).length)pass(i)}
- else if(t==='ch'){const tx=String(d.text||'').trim().slice(0,200);if(!tx)return;S.chat.push({w:who,t:tx,at:Date.now()});if(S.chat.length>40)S.chat.splice(0,S.chat.length-40)}
- else if(t==='rx'){if(EMO.includes(d.e))S.rx={w:who,e:d.e,at:Date.now()}}
+ else if(t==='ch'){const tx=String(d.text||'').trim().slice(0,200);if(!tx)return;S.chat.push({w:who,t:tx,at:now()});if(S.chat.length>40)S.chat.splice(0,S.chat.length-40)}
+ else if(t==='rx'){if(EMO.includes(d.e)){const id=/^[a-z0-9]{4,12}$/.test(d.id)?d.id:Math.random().toString(36).slice(2,10);S.rx={w:who,e:d.e,at:now(),id};/* rx alone is kept for older pages */S.rxs=(Array.isArray(S.rxs)?S.rxs:[]).concat([{id,k,w:who,e:d.e}]).slice(-8)}}
  else if(t==='decl'){const n=i>=0?(S.hands[i]||[]).length:0;if(S.phase==='play'&&n>=1&&n<=2)declare(i,d.s==='sure'?'sure':'unsure')}}
-function declare(i,s){const n=(S.hands[i]||[]).length;S.decl=S.decl||{};S.decl[i]={s,n};S.ann={i,s,n,at:Date.now()}}
+function declare(i,s){const n=(S.hands[i]||[]).length;S.decl=S.decl||{};S.decl[i]={s,n};S.ann={i,s,n,at:now()}}
 function hostDo(a,v){if(!isHost||!S)return;
  if(a==='bot'){if(S.seats.length>=8||S.phase!=='lobby')return;const used=new Set(S.seats.map(x=>x.name));S.seats.push({k:'bot'+Date.now(),name:(BOTN.find(n=>!used.has(n+' (AI)'))||'Bot')+' (AI)',bot:true});S.scores.push(0)}
  else if(a==='rm'){if(S.phase!=='lobby')return;S.seats.splice(v,1);S.scores.splice(v,1)}
@@ -316,7 +319,7 @@ function ring(){const n=S.seats.length,me=Math.max(0,seatOf(myKey)),o=S.seats.ma
 const isUp=x=>x.bot||online.has(x.k)||x.k===myKey;
 function chip(i){const x=S.seats[i],t=Date.now(),play=S.phase==='play',f=flash&&flash.i===i&&t<flash.until?flash:null,on=play&&S.turn===i&&live(),n=(S.hands[i]||[]).length,up=isUp(x),c=(S.lastBy||{})[i],me=i===seatOf(myKey);
  const nm=x.name.replace(/ \(AI\)$/,''),last=!c?'':c==='pass'?'pass':OKC.test(c)?lbl(c):'',bg=chipBadge(i),st=play&&stampP&&stampP.i===i&&t-stampP.at<2600;
- return`<div class="chip ${f?f.cls:on?'on':''} ${up?'':'away'}" data-p="${i}" style="--pc:${pcol(i)}" title="${esc(x.name)}"><span class="chin"><b>${me?'You':esc(nm)}</b><span><i class="cnt" title="cards left">${n}</i>${x.bot?'<em class="tag">AI</em>':up?'':'<small>away</small>'}${last}</span></span>${bg?`<span class="bdg">${bg}</span>`:''}${f&&f.cls==='ok'?`<span class="played ${red(pc(f.c).s)?'rd':''}">${f.au==='time'?'⏱ ':''}${RN[pc(f.c).r]}${SYM[pc(f.c).s]}</span>`:''}${st?'<span class="pstamp"><b>PASS</b></span>':''}</div>`}
+ return`<div class="chip ${f?f.cls:on?'on':''} ${up?'':'away'}" data-p="${i}" style="--pc:${pcol(i)}" title="${esc(x.name)}"><span class="chin"><b>${me?'You':esc(nm)}</b><span><i class="cnt" title="cards left">${n}</i>${x.bot?'<em class="tag">AI</em>':up?'':'<small>away</small>'}${last}</span></span>${rxBadge[i]&&t<rxBadge[i].until?`<span class="rxb">${rxBadge[i].e}</span>`:''}${bg?`<span class="bdg">${bg}</span>`:''}${f&&f.cls==='ok'?`<span class="played ${red(pc(f.c).s)?'rd':''}">${f.au==='time'?'⏱ ':''}${RN[pc(f.c).r]}${SYM[pc(f.c).s]}</span>`:''}${st?'<span class="pstamp"><b>PASS</b></span>':''}</div>`}
 let chipSig='';
 /* redraw chips only when they change, and resume running animations where they were */
 function chips(){if(!S||S.phase==='lobby'||!(S.hands||[]).length){if(chipSig){chipSig='';$('chT').innerHTML=$('chB').innerHTML=''}return}
@@ -369,7 +372,7 @@ function render(){if(!S)return;
   return`<div class="col" aria-label="${s} pile"><div class="stack">${h}</div></div>`}).join('')}
  const ak=moveKey();if(ak!==animKey){const prev=animKey;animKey=ak;const hl=(S.hist||[]).slice(-1)[0];if(prev!==null&&got&&hl&&S.phase!=='lobby'&&!rm.matches)requestAnimationFrame(()=>fly(hl.i,hl.c,mine))}
  $('players').innerHTML=S.phase!=='lobby'?'':S.seats.map((x,i)=>{const up=x.bot||online.has(x.k)||x.k===myKey;
-  return`<div class="pl" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${S.scores[i]||0} pts</small>`:''}</div>`}).join('');
+  return`<div class="pl" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${S.scores[i]||0} pts</small>`:''}</div>`}).join('');
  $('pts').innerHTML=S.phase==='play'&&S.round>0?'Points: '+S.seats.map((x,i)=>i).sort((a,b)=>(S.scores[a]||0)-(S.scores[b]||0)||a-b).map(i=>`${i===mine?'You':esc(nameOf(i))} <b>${S.scores[i]||0}</b>`).join(' · '):'';
  let st='',hint='';
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
@@ -379,7 +382,7 @@ function render(){if(!S)return;
  tickUI();
  $('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
  {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';const au=S.last&&S.last.i===hl.i&&S.last.auto;pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?(au==='time'?'Time’s up — no card fits':au?'Your turn was passed — no card fits':'You passed'):esc(nameOf(hl.i))+(au==='time'?' ran out of time':' had no card')}</small></div>`;clearTimeout(pz.t);pz.t=setTimeout(()=>pz.classList.remove('show'),me?3400:1800);void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
- if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&Date.now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
+ if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
  {const ch=S.chat||[],mx=ch.reduce((a,c)=>Math.max(a,c.at||0),0);if(lastChat===null){if(got)lastChat=mx}else if(mx>lastChat){for(const c of ch.filter(c=>c.at>lastChat).slice(-3)){bubble(`<b>${esc(c.w)}</b>: ${esc(c.t)}`);if($('chatpanel').hidden)unread++}lastChat=mx;$('unread').textContent=unread?String(unread):''}}
  const dp=$('declp');const myn=mine>=0?(S.hands[mine]||[]).filter(c=>OKC.test(c)).length:0,md=(S.decl||{})[mine];
  const dh=S.phase==='play'&&mine>=0&&myn>=1&&myn<=2&&!(md&&md.n===myn)?`<div class="decl"><b>You have ${myn} card${myn>1?'s':''} left — call it!</b><button data-a="decl" data-s="sure">Sure ✅</button><button data-a="decl" data-s="unsure">Not sure 🤔</button></div>`:'';
@@ -407,7 +410,29 @@ function render(){if(!S)return;
  $('mid').innerHTML=m;
  const cl=$('chatlog'),atEnd=cl.scrollHeight-cl.scrollTop-cl.clientHeight<30;
  cl.innerHTML=(S.chat||[]).map(c=>`<p><b>${esc(c.w)}:</b> ${esc(c.t)}</p>`).join('')||'<p class="note">Chat with the table here.</p>';if(atEnd)cl.scrollTop=cl.scrollHeight;
- if(S.rx&&S.rx.at>lastRx){lastRx=S.rx.at;if(Date.now()-S.rx.at<6000&&EMO.includes(S.rx.e)){if(show&&show.open)bubble(S.rx.e+' '+esc(S.rx.w));const r=$('rx');r.textContent=S.rx.e+' '+String(S.rx.w||'');r.classList.remove('show');void r.offsetWidth;r.classList.add('show')}}}
+ reactCheck()}
+/* ---- reactions: fly from the sender's chip with a trail. New ones are told apart by id, never by clock, so phones with wrong clocks see them too ---- */
+const rxSeen=new Set(),rxBadge={};let rxReady=false,rxMine=0;
+function reactCheck(){const l=(Array.isArray(S.rxs)?S.rxs:[]).filter(r=>r&&EMO.includes(r.e)),o=S.rx;
+ if(o&&!o.id&&EMO.includes(o.e))l.push({id:'o'+o.at,w:o.w,e:o.e,k:(S.seats.find(x=>x.name===o.w)||{}).k});/* written by a host on an older page */
+ for(const r of l){if(rxSeen.has(r.id))continue;rxSeen.add(r.id);if(!rxReady||(r.k===pid&&!S.rx.id&&Date.now()-rxMine<5000))continue;react(r)}
+ if(got)rxReady=true;if(rxSeen.size>200)for(const id of[...rxSeen].slice(0,100))rxSeen.delete(id)}
+function react(r){const i=seatOf(r.k),col=i>=0?pcol(i):'#555',nm=i>=0&&r.k===pid?'You':String((i>=0?nameOf(i):r.w)||'Guest').replace(/ \(AI\)$/,'');$('rx').textContent=nm+' '+r.e;
+ if(i>=0){rxBadge[i]={e:r.e,until:Date.now()+4500};chips()}
+ const box=$('fx');while(box.children.length>90)box.firstChild.remove();
+ const W=innerWidth,H=innerHeight,src=document.querySelector(`.chip[data-p="${i}"]`)||document.querySelector(`.pl[data-p="${i}"]`),s=src&&src.getBoundingClientRect(),cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const x0=cl(s?s.left+s.width/2:W/2,40,W-40),y0=cl(s?s.top+s.height/2:H-70,70,H-80);
+ const f=document.querySelector('.felt').getBoundingClientRect(),vis=!(show&&show.open)&&f.top>-f.height/3&&f.bottom<H+f.height/3;
+ const x1=cl((vis?f.left+f.width/2:W/2)+(Math.random()-.5)*110,70,W-70),y1=cl((vis?f.top+f.height*.47:H*.42)+(Math.random()-.5)*70,90,H-140);
+ const mk=(cls,html)=>{const e=document.createElement('div');e.className=cls;e.style.setProperty('--pc',col);e.innerHTML=html;box.appendChild(e);return e},big=`${r.e}<b>${esc(nm)}</b>`;
+ if(rm.matches){const e=mk('rxe',big);e.style.transform=`translate(${x0}px,${y0}px)`;setTimeout(()=>e.remove(),2600);return}
+ /* a curved path, bowed to one side, sampled into keyframes */
+ const bow=(x0<W/2?1:-1)*Math.min(130,W*.28),cx=(x0+x1)/2+(Math.abs(x1-x0)<90?bow:0),cy=(y0+y1)/2-(Math.abs(y1-y0)<90?120:0),pt=t=>[(1-t)*(1-t)*x0+2*(1-t)*t*cx+t*t*x1,(1-t)*(1-t)*y0+2*(1-t)*t*cy+t*t*y1];
+ const N=14,at=(t,k)=>{const[x,y]=pt(t);return`translate(${x}px,${y}px) scale(${k})`},path=(k0,k1)=>Array.from({length:N+1},(_,n)=>({transform:at(n/N,k0+(k1-k0)*n/N)}));
+ const T=1300,run=(e,kf,o)=>{const a=e.animate(kf,{fill:'both',easing:'linear',...o});a.onfinish=()=>e.remove();setTimeout(()=>e.remove(),(o.duration+(o.delay||0))+400)};
+ for(let n=12;n>=1;n--){const dot=n%2,e=mk('rxt'+(dot?' dot':''),dot?'':r.e),k=1.05-n*.05;run(e,path(k*.6,k).map((q,j,a)=>({...q,opacity:j===0?0:j===a.length-1?0:(.95-n*.06)})),{duration:T,delay:n*60})}
+ const e=mk('rxe',big),tot=T+1300;run(e,[...path(.55,1).map((q,n)=>({...q,opacity:1,offset:n/N*T/tot})),{transform:at(1,1.45),opacity:1,offset:(T+180)/tot},{transform:at(1,1.15),opacity:1,offset:(T+380)/tot},{transform:at(1,1.15),opacity:1,offset:(T+950)/tot},{transform:`translate(${x1}px,${y1-50}px) scale(1)`,opacity:0,offset:1}],{duration:tot});
+ if(src)src.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:420})}
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),3000)}
 
 /* ---- wiring ---- */
@@ -431,7 +456,7 @@ function onAct(b){const a=b.dataset.a;if(a==='play'||a==='pass'){if(pend||!S||S.
  else if(a==='leave'){if(Date.now()-(onAct.lv||0)>5000){onAct.lv=Date.now();toast('Tap “Leave table” again to confirm');return}leaveTable()}
  else if(a==='newtable'){if(Date.now()-(onAct.sure||0)>5000){onAct.sure=Date.now();toast('Tap again to confirm — you’ll leave this table and get a new link');return}onAct.sure=0;newTable()}
  else if(a==='copy'){const l=$('ilink').textContent;(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(()=>toast('Link copied — paste it in WhatsApp'),()=>toast('Press and hold the link to copy it'))}
- else if(a==='rx'){const r=$('rx');r.textContent=b.dataset.e+' '+(nick||'You');r.classList.remove('show');void r.offsetWidth;r.classList.add('show');act('rx',{e:b.dataset.e})}
+ else if(a==='rx'){if(!S||Date.now()-rxMine<250)return;rxMine=Date.now();const id=Math.random().toString(36).slice(2,10).padEnd(6,'0'),e=b.dataset.e;rxSeen.add(id);react({id,k:pid,w:nick,e});act('rx',{e,id})}
  else if(a==='decl'){const s=b.dataset.s;act('decl',{s});$('declp').innerHTML='';setTimeout(()=>{if(S){render.dh='';render()}},4000)}
  else if(a==='chatlog'){const p=$('chatpanel');p.hidden=!p.hidden;if(!p.hidden){$('msg').focus({preventScroll:true});unread=0;$('unread').textContent='';const cl=$('chatlog');cl.scrollTop=cl.scrollHeight}}
  else if(a==='chatx'){$('chatpanel').hidden=true}else hostDo(a,+b.dataset.i)}

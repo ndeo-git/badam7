@@ -86,6 +86,12 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 3. **Emoji line** at the bottom, one tap to send; 💬 opens the text box, ready to type, and closes after sending.
 4. Center cards grow when your hand needs only one row.
 
+### Phase A.4 — flying reactions (done)
+
+- A reaction flies from the sender's chip (lobby: their tile; spectators: bottom center) to the middle of the board with a trail, the sender's name in their color, and a small badge on their chip for 4.5 s. Reduced motion: it just appears at the chip.
+- State: `rxs`, the last 8 reactions `{id, k, w, e}`. Each phone shows every id once. **Never compare host timestamps with a phone's own clock to decide whether to show something** (use ids, or `now()` on both sides). `rx` is still written for older pages.
+- Anything drawn over the board goes in `#fx`; inside the felt it can end up under the cards (they have z-index).
+
 ### Phase B — cards and players
 
 5. Player icon: last card played, cards left and a proportional mini fan.
