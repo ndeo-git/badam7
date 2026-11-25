@@ -72,7 +72,7 @@ header .bell{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}he
 .hand.mine.turn .cd{cursor:pointer}.hand.mine.turn.hint .cd:not(.ok){opacity:.5}.hand.mine .cd.pend{opacity:.35}
 .felt{scroll-margin-top:60px}.hand{scroll-margin:130px 0 calc(128px + env(safe-area-inset-bottom))}
 #bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}#bar:empty{display:none}#passb{min-width:128px;background:#c3142d;letter-spacing:.04em}#passb.need{outline:3px solid var(--gold);outline-offset:2px}#bar .hintb{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}
-#turn{position:sticky;top:0;z-index:37;display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;margin:0 0 8px;padding:5px 14px;border-radius:0 0 14px 14px;background:#b3122a;color:#fff;font-weight:800;font-size:18px;line-height:1.25;text-align:center;box-shadow:0 4px 12px #0005}#turn[hidden]{display:none}#cd{flex:none;min-width:2.1em;padding:1px 8px;border-radius:999px;background:#fff;color:#b3122a;font-variant-numeric:tabular-nums}#cd:empty{display:none}#turn.low #cd{background:var(--gold);color:#2a1a00}
+#turn{position:sticky;top:0;z-index:37;display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;margin:0 0 8px;padding:5px 14px;border-radius:0 0 14px 14px;background:#b3122a;color:#fff;font-weight:800;font-size:18px;line-height:1.25;text-align:center;box-shadow:0 4px 12px #0005}#turn[hidden]{display:none}#turn.ok{background:#1b7a3e}#turn.ps{background:#ffc94d;color:#2a1a00}#cd{flex:none;min-width:2.1em;padding:1px 8px;border-radius:999px;background:#fff;color:#b3122a;font-variant-numeric:tabular-nums}#cd:empty{display:none}#turn.low #cd{background:var(--gold);color:#2a1a00}
 .bad{position:fixed;z-index:70;display:grid;place-items:center;pointer-events:none;border-radius:10px;background:#c3142d44;color:#e4002b;font:800 44px/1 Mukta,sans-serif;text-shadow:0 0 4px #fff,0 0 8px #fff;animation:bad .8s ease-out both}@keyframes bad{0%{opacity:0;transform:scale(1.5)}15%{opacity:1;transform:none}35%{transform:translateX(-4px)}50%{transform:translateX(4px)}65%{transform:none}80%{opacity:1}100%{opacity:0}}@media(prefers-reduced-motion:reduce){.bad{animation:none}}
 .set{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}.set h3{font:800 16px Mukta,sans-serif;margin:0 0 6px}.srow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}.srow>span{flex:1 0 100%;font-size:15px;color:var(--mut)}.srow button{min-height:40px;min-width:44px;padding:2px 10px;background:transparent;color:var(--ink);border:1px solid var(--line)}.srow button[aria-pressed=true]{background:var(--felt2);color:#fff;border-color:transparent}
 @keyframes bob{50%{transform:translateY(-9px)}}
@@ -282,14 +282,19 @@ const ding3=()=>tones([[988,0],[1319,.12],[1760,.24]],'triangle');
 
 /* changes on every play or pass (hist itself is capped, so its length is not enough) */
 const moveKey=()=>{const l=(S.hist||[]).slice(-1)[0];return[S.round,S.mv||0,(S.hist||[]).length,l?l.i+l.c:''].join(':')};
-let tickSec=-1;
-function banner(){const b=$('turn');if(!S||S.phase!=='play'||!S.seats[S.turn]){b.hidden=true;return}
+let tickSec=-1,flash=null;
+function flashMove(){const l=(S.hist||[]).slice(-1)[0],k=moveKey();if(k===flashMove.k)return;const was=flashMove.k;flashMove.k=k;if(!was||!got)return;if(!l||S.phase==='lobby'){flash=null;return}
+ const au=S.last&&S.last.i===l.i?S.last.auto:'',nx=S.seats[S.turn],quick=nx&&(nx.bot||!online.has(nx.k)&&nx.k!==myKey),who=l.i===seatOf(myKey)?'You':nameOf(l.i),p=l.c==='pass';
+ if(!p&&!OKC.test(l.c))return;flash={cls:p?'ps':'ok',tx:who+(p?' passed':' played '+RN[pc(l.c).r]+SYM[pc(l.c).s])+(au==='time'?' — time’s up':au==='away'?' (AI stood in)':''),until:Date.now()+(quick&&S.phase==='play'?Math.min(1500,cfg().think*600):1500)}}
+function banner(){const b=$('turn'),say=t=>{if($('turnt').textContent!==t)$('turnt').textContent=t},secs=t=>{if($('cd').textContent!==t)$('cd').textContent=t};
+ if(S&&flash&&Date.now()<flash.until&&S.phase!=='lobby'){b.hidden=false;b.className=flash.cls;say(flash.tx);secs('');return}
+ if(!S||S.phase!=='play'||!S.seats[S.turn]){b.hidden=true;return}
  const i=S.turn,x=S.seats[i],mine=seatOf(myKey),me=i===mine,up=x.bot||online.has(x.k)||x.k===myKey;let cls='',left=null;
  const tx=me?hintsOn()?(moves(i).length?'Your turn — tap a glowing card':'No card fits — press Pass'):'Your turn':up?x.name+'’s turn':x.name+' is away — AI will play';
  if(!x.bot&&up&&S.set&&S.set.timer){left=Math.max(0,Math.min(S.set.timer,Math.ceil((S.turnAt+S.set.timer*1000-now())/1000)));if(left<=5)cls+=' low';
   if(me&&!pend&&left>=1&&left<=5&&left!==tickSec)tickS();tickSec=left}
- b.hidden=false;b.className=cls;if($('turnt').textContent!==tx)$('turnt').textContent=tx;const ct=left===null?'':left+'s';if($('cd').textContent!==ct)$('cd').textContent=ct}
-setInterval(banner,250);
+ b.hidden=false;b.className=cls;say(tx);secs(left===null?'':left+'s')}
+setInterval(banner,100);
 function setPanel(){const o=cfg(),tm=v=>v?v+' s':'Off';if(!isHost)return`<p class="note">Table settings: hints ${o.hints?'on':'off'} · AI thinks ${o.think} s · turn timer ${o.timer?o.timer+' s':'off'}</p>`;
  const row=(l,f,vs,cur,nm)=>`<div class="srow" role="group" aria-label="${l}"><span>${l}</span>${vs.map(v=>`<button type="button" data-a="set" data-f="${f}" data-v="${v}" aria-pressed="${v===cur}">${nm(v)}</button>`).join('')}</div>`;
  return`<div class="set"><h3>Table settings</h3>${row('Hints (each player can override)','hints',[1,0],o.hints?1:0,v=>v?'On':'Off')}${row('AI think time','think',THINK,o.think,v=>v+' s')}${row('Turn timer','timer',TIMER,o.timer,tm)}</div>`}
@@ -305,7 +310,7 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
  let st='',hint='';
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
  else if(S.phase==='over')st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
- $('status').innerHTML=st;$('status').hidden=!st;banner();
+ $('status').innerHTML=st;$('status').hidden=!st;flashMove();banner();
  {const my=S.phase==='play'&&mine>=0,tn=my&&S.turn===mine,o=ls.get('sl.hints');$('bar').innerHTML=my?`<button type="button" id="passb" data-a="pass" class="${tn&&!pend&&hintsOn()&&!moves(mine).length?'need':''}" ${tn&&!pend?'':'disabled'}>Pass</button><button type="button" class="alt hintb" data-a="hints">💡 Hints: ${o==='1'?'on':o==='0'?'off':'table ('+(hintsOn()?'on':'off')+')'}</button>`:''}
  $('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
  {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';const au=S.last&&S.last.i===hl.i&&S.last.auto;pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?(au==='time'?'Time’s up — no card fits':au?'Your turn was passed — no card fits':'You passed'):esc(nameOf(hl.i))+(au==='time'?' ran out of time':' had no card')}</small></div>`;clearTimeout(pz.t);pz.t=setTimeout(()=>pz.classList.remove('show'),me?3400:1800);void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
