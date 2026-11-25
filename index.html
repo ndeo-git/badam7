@@ -251,7 +251,7 @@ setInterval(()=>{const t=now();if(t-tickAt>3000)hold=t+2500;tickAt=t;/* just wok
  if(!isHost||!S||S.phase!=='play'||t<hold||t-hostOk>15000)return;const i=S.turn,x=S.seats[i];if(!x)return;
  const age=t-S.turnAt,away=!x.bot&&!online.has(x.k)&&x.k!==myKey,can=moves(i).length>0,o=cfg();let due=Infinity,why='';
  if(away)awayT[x.k]=awayT[x.k]||t;else delete awayT[x.k];
- if(x.bot)due=o.think*1000;
+ if(x.bot)due=can&&S.hands[i].length===1?1000:o.think*1000;/* going out: don't keep everyone waiting */
  else if(away){due=t-awayT[x.k]>30000?1400:8000;why='away'}
  else{if(o.timer){due=o.timer*1000+1000;why='time'}if(!can&&x.k!==myKey&&!((onV[x.k]||{}).v>=2)){due=1300;why='old'}}
  if(age<due)return;
