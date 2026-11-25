@@ -51,6 +51,7 @@ input{font:16px Mukta,sans-serif;padding:8px 10px;border-radius:10px;border:1px 
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%)}}
 .players{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .pl{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:6px 10px;display:flex;align-items:center;gap:7px;font-size:15px}
+.pl{position:relative}.pstamp{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:2;animation:pst 2.6s ease-out both}.pstamp b{transform:rotate(-10deg);color:#ff3b3b;background:#120408dd;border:3px solid #ff3b3b;border-radius:8px;padding:0 10px;font:800 19px/1.35 Mukta,sans-serif;letter-spacing:.08em;box-shadow:0 3px 10px #0007}@keyframes pst{0%{opacity:0;transform:scale(2)}8%{opacity:1;transform:scale(.95)}12%{transform:none}82%{opacity:1}100%{opacity:0}}@media(prefers-reduced-motion:reduce){.pstamp{animation:none}}
 .pl small{color:var(--mut);white-space:nowrap}
 .pl.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
 .dot{width:8px;height:8px;border-radius:50%;background:#9994;flex:none}.dot.up{background:#2fa35a}
@@ -257,6 +258,8 @@ function act(t,d){if(isHost){apply(pid,t,{...d,nick});pend=null;commit();return}
 /* ---- render ---- */
 const card=(c,cls='')=>{const{r,s}=pc(c);return`<span class="cd ${red(s)?'r':''} ${cls}" data-c="${c}"><b>${RN[r]}</b><i>${SYM[s]}</i></span>`};
 const lb=i=>{const c=(S.lastBy||{})[i];if(S.phase!=='play'||!c)return'';return c==='pass'?'<small class="lb">passed</small>':OKC.test(c)?`<small class="lb">last <b class="${red(pc(c).s)?'rd':''}">${RN[pc(c).r]}${SYM[pc(c).s]}</b></small>`:''};
+let stampP=null;/* last pass, so the stamp on the player's tile survives redraws */
+const pstamp=i=>{if(!stampP||stampP.i!==i||S.phase!=='play')return'';const el=Date.now()-stampP.at;return el<2600?`<span class="pstamp" style="animation-delay:-${el}ms"><b>PASS</b></span>`:''};
 let boardSig='',animKey=null;const rm=matchMedia('(prefers-reduced-motion: reduce)');
 const PCOL=['#e8590c','#1c7ed6','#2f9e44','#ae3ec9','#f59f00','#0c8599','#d6336c','#5c7cfa'],pcol=i=>PCOL[i%8];
 function fly(i,c,mine){const chip=document.querySelector(`#players [data-p="${i}"]`);
@@ -296,8 +299,9 @@ function render(){if(!S)return;const mine=seatOf(myKey),n=S.seats.length,last=S.
   if(row)for(let r=row[0];r<=row[1];r++){const c=r+s,hot=c===last;h+=`<span class="pc ${red(s)?'r':''} ${hot?'hot':''}" data-c="${c}" style="--i:${r-1};z-index:${r+1}${hot?';--pc:'+pcol(S.last.i):''}"><b>${RN[r]}${SYM[s]}</b><i>${SYM[s]}</i>${hot?`<em class="who ${r===row[1]?'btm':''}">${esc(nameOf(S.last.i))}</em>`:''}</span>`}
   return`<div class="col" aria-label="${s} pile"><div class="stack">${h}</div></div>`}).join('')}
  const ak=moveKey();if(ak!==animKey){const prev=animKey;animKey=ak;const hl=(S.hist||[]).slice(-1)[0];if(prev!==null&&got&&hl&&S.phase!=='lobby'&&!rm.matches)requestAnimationFrame(()=>fly(hl.i,hl.c,mine))}
+ {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==render.sk){const was=render.sk;render.sk=hk;if(was&&got&&hl&&S.phase==='play'&&hl.c==='pass'){stampP={i:hl.i,at:Date.now()};setTimeout(()=>{const e=document.querySelector(`#players [data-p="${hl.i}"] .pstamp`);if(e&&Date.now()-stampP.at>=2600)e.remove()},2650)}}}
  $('players').innerHTML=S.seats.map((x,i)=>{const up=x.bot||online.has(x.k)||x.k===myKey;const cnt=S.phase==='lobby'?'':((S.hands[i]||[]).length===1?'1 card':(S.hands[i]||[]).length+' cards')+' · ';
-  return`<div class="pl ${S.phase==='play'&&S.turn===i?'on':''}" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${cnt}${S.scores[i]||0} pts</small>`:''}${chipBadge(i)}${lb(i)}</div>`}).join('');
+  return`<div class="pl ${S.phase==='play'&&S.turn===i?'on':''}" data-p="${i}" style="border-left:5px solid ${pcol(i)}"><span class="dot ${up?'up':''}"></span><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${S.round>0?`<small>${cnt}${S.scores[i]||0} pts</small>`:''}${chipBadge(i)}${lb(i)}${pstamp(i)}</div>`}).join('');
  let st='',hint='';
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
  else if(S.phase==='over')st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
