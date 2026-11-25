@@ -37,7 +37,7 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 - Fly-in animation from the player's chip. The last-played card is outlined in the player's color with a name tag. Per-seat colors.
 - Board with player chips around it on top, then the turn label and Pass, your hand, the points line, the Recent line and the invite box.
 - Bell at 2 cards, the Sure/Not-sure call banner and chime, and a big PASS stamp across the board (small one for other players).
-- Chat and emoji dock fixed at the bottom, chat bubbles at the top, 💬 history panel with unread count. (Chat dock space is a known compromise; leave it for now.)
+- Sticky slim header with 🔊 (mutes every game sound on that phone) and 💬 (opens a chat panel at the top: reactions, history, message box, unread count). Nothing is fixed at the bottom of the screen. Chat bubbles and messages show at the top.
 - Round results: scores table plus each player's leftover cards.
 - Leave table, Start my own table, New game (clear scores), Change players, AI players (Aaji, Kaka…).
 - Respects `prefers-reduced-motion`. Mobile-first (≈390 px wide).
@@ -64,10 +64,20 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
    - Green for ~1.5 s after they play, with the card they played shown on or near the chip. Amber plus the PASS stamp for a pass.
    - You are always at the bottom right on your own phone; turns run clockwise (bottom row leftwards, top row rightwards). Bottom row holds half the players, rounded down.
    - Player tiles are shown in the lobby only. During a round a one-line "Points:" list replaces them.
-2. **"It's your turn" must be unmistakable for the current player:** felt edge glows, hand area highlighted with a "Your turn" label and countdown, soft chime (respects Bell on/off), short vibration where supported. Not distracting for others.
+2. **"It's your turn" must be unmistakable for the current player:** felt edge glows, hand area highlighted with a "Your turn" label and countdown, soft chime (respects the 🔊 mute button), short vibration where supported. Not distracting for others.
 3. **Host table setting "Players can change hints"** (default: no). When off, the 💡 button is hidden and everyone uses the table's hint setting. Changing it applies immediately: the host can change the two hint settings mid-round too (Hint settings button). Other settings only between rounds.
 4. **AI going out:** when an AI's turn would play its last card, it plays after ~1 s instead of the think time.
 5. Everything else stays as is. The host can change table settings in the lobby and on the end-of-round screen without losing scores (added in Phase A).
+
+### Phase A.2 — second round of family feedback (done)
+
+1. Bigger pile cards: strip height and rank labels grow with the free screen height, and the highest card shows its rank and suit large.
+2. Chat dock removed; chat opens from 💬 in the header.
+3. The name tag on the last-played card fades after 1.5 s (the colored outline stays).
+4. Turn timer default is 30 s. The countdown and ring only show for the last 15 s.
+5. Gentle tone when you play a card, "wrong answer" tone when you pass, heard only on your own phone.
+6. One 🔊/🔇 button replaces the Bell button and silences all game sounds (vibration is not affected).
+7. **Nothing may ever cover the Sure / Not sure buttons.** They sit in the page flow above the hand; messages go to the top of the screen.
 
 ### Phase B — cards and players
 
