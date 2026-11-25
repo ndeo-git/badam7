@@ -117,9 +117,8 @@ body{padding-bottom:calc(46px + env(safe-area-inset-bottom))}
 #chatpanel{position:fixed;left:max(3vw,8px);right:max(3vw,8px);top:48px;z-index:41;max-width:520px;margin:0 auto;background:var(--pan);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px -10px #0008;padding:10px 12px}
 .cph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 #tops{position:fixed;left:0;right:0;top:5px;z-index:42;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;padding:0 10px}#bubbles{display:flex;flex-direction:column;align-items:center;gap:5px}
-.bub{max-width:min(92vw,520px);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:16px;font-size:15px;box-shadow:0 4px 12px #0005;animation:bub 5s ease forwards}.bub b{color:var(--gold)}
-/* in the page flow and above chat and messages, so nothing can cover the Sure / Not sure buttons */
-#declp{position:relative;z-index:43}.decl{background:var(--felt2);color:#fff;border-radius:14px;padding:8px 10px;margin:6px 0;display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;text-align:center}.decl b{grid-column:1/-1}.decl button{background:#fff;color:#1c1418;font-size:17px;padding:8px 4px}
+.bub{max-width:min(92vw,520px);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:16px;font-size:15px;box-shadow:0 4px 12px #0005;animation:bub 5s ease forwards}.bub b{color:var(--gold)}.bub .cs,.bub .cn{font-weight:800;border-radius:7px;padding:1px 8px;color:#fff;background:#23803a;white-space:nowrap}.bub .cn{background:#6b747c}
+
 @keyframes bub{0%{opacity:0;transform:translateY(-10px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 
 .sure{background:#2f9e44;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}.unsure{background:#868e96;color:#fff;font-size:12px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}
@@ -145,7 +144,6 @@ form{display:flex;gap:8px}form input{flex:1}
 <div class="felt"><div id="chT" class="chips"></div><div id="board"></div><div id="chB" class="chips"></div><span id="rx" class="sr" aria-live="polite"></span><div id="passed" aria-live="assertive"></div></div>
 <div id="status">Opening the table…</div>
 <div id="me"><div id="bar"></div>
-<div id="declp"></div>
 <div id="hand" class="hand"></div></div>
 <div id="pts"></div>
 <div class="players" id="players"></div>
@@ -174,7 +172,7 @@ const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:
 let pid=ls.get('sl.pid');if(!pid){pid='p'+Math.random().toString(36).slice(2,10);ls.set('sl.pid',pid)}
 let nick=ls.get('sl.nick')||'',myKey=pid,S=null,isHost=false,got=false,online=new Set(),pend=null,lastRx=0,myN=0,msg='';
 const DEF={hints:true,hintOv:false,think:2,timer:30};
-const fresh=()=>({phase:'lobby',seats:[],hands:[],rows:{S:null,H:null,D:null,C:null},turn:0,turnAt:0,first:true,last:null,log:'',scores:[],lastPts:[],round:0,lastBy:{},hist:[],seq:{},chat:[],rx:null,host:'',mv:0,set:{...DEF}});
+const fresh=()=>({phase:'lobby',seats:[],hands:[],rows:{S:null,H:null,D:null,C:null},turn:0,turnAt:0,first:true,last:null,log:'',scores:[],lastPts:[],round:0,lastBy:{},hist:[],seq:{},chat:[],rx:null,host:'',anns:[],mv:0,set:{...DEF}});
 const THINK=[1,2,3,4,5],TIMER=[0,15,20,30,45,60],cfg=()=>({...DEF,...(S&&S.set||{})});
 const hintsOn=()=>{const o=cfg().hintOv?ls.get('sl.hints'):null;return o==='1'?true:o==='0'?false:cfg().hints!==false};
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -186,15 +184,15 @@ const nameOf=i=>S.seats[i]?S.seats[i].name:'?';
 
 /* ---- host-only game engine ---- */
 function play(i,c){const h=S.hands[i],j=h.indexOf(c);if(j<0||!legal(c))return false;h.splice(j,1);const{r,s}=pc(c),row=S.rows[s];
- S.rows[s]=row?[Math.min(row[0],r),Math.max(row[1],r)]:[7,7];S.first=false;S.last={i,c};S.log=nameOf(i)+' played '+RN[r]+SYM[s];note(i,c);if(S.seats[i].bot&&h.length>=1&&h.length<=2)declare(i,h.every(legal)?'sure':'unsure');
- if(!h.length)endRound(i);else nextTurn(i,SETTLE.play);return true}
+ S.rows[s]=row?[Math.min(row[0],r),Math.max(row[1],r)]:[7,7];S.first=false;S.last={i,c};S.log=nameOf(i)+' played '+RN[r]+SYM[s];note(i,c);
+ if(!h.length)endRound(i);else{nextTurn(i,SETTLE.play);autoCalls()}return true}
 function note(i,c){S.mv=(S.mv||0)+1;S.lastBy=S.lastBy||{};S.lastBy[i]=c;S.hist=(S.hist||[]).concat([{i,c}]).slice(-8)}
 function pass(i){S.last={i,pass:true};note(i,'pass');S.log=nameOf(i)+' passed';nextTurn(i,SETTLE.pass)}
 /* the next turn (and its timer) starts only once the card has landed and the name tag has gone */
 const SETTLE={play:1600,pass:1200};
 function nextTurn(i,ms){S.turn=(i+1)%S.seats.length;S.turnAt=now()+ms}
 function endRound(w){S.phase='over';S.winner=w;S.lastPts=S.hands.map(h=>h.reduce((a,c)=>a+pts(c),0));S.lastPts.forEach((p,i)=>S.scores[i]=(S.scores[i]||0)+p);S.log=nameOf(w)+' finished first!'}
-function emptyBoard(){S.hands=[];S.rows={S:null,H:null,D:null,C:null};S.last=null;S.first=true;S.lastBy={};S.hist=[];S.decl={};S.ann=null}
+function emptyBoard(){S.hands=[];S.rows={S:null,H:null,D:null,C:null};S.last=null;S.first=true;S.lastBy={};S.hist=[];S.decl={};S.ann=null;S.anns=[]}
 function deal(){const n=S.seats.length;if(n<3||n>8)return;const d=[];for(const s of SU)for(let r=1;r<=13;r++)d.push(r+s);
  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
  emptyBoard();S.hands=S.seats.map(()=>[]);d.forEach((c,i)=>S.hands[i%n].push(c));while(S.scores.length<n)S.scores.push(0);
@@ -206,9 +204,13 @@ function apply(k,t,d){const i=seatOf(k),who=i>=0?nameOf(i):clip(d.nick)||'Guest'
  else if(t==='mv'||t==='pass'){if(S.phase!=='play'||i<0||i!==S.turn||(d.n!=null&&d.n!==(S.mv||0)))return;/* n = move number the player saw, so a late tap can't count for a later turn */
   if(t==='mv')play(i,String(d.c));else if(!moves(i).length)pass(i)}
  else if(t==='ch'){const tx=String(d.text||'').trim().slice(0,200);if(!tx)return;S.chat.push({w:who,t:tx,at:now()});if(S.chat.length>40)S.chat.splice(0,S.chat.length-40)}
- else if(t==='rx'){if(EMO.includes(d.e)){const id=/^[a-z0-9]{4,12}$/.test(d.id)?d.id:Math.random().toString(36).slice(2,10);S.rx={w:who,e:d.e,at:now(),id};/* rx alone is kept for older pages */S.rxs=(Array.isArray(S.rxs)?S.rxs:[]).concat([{id,k,w:who,e:d.e}]).slice(-8)}}
- else if(t==='decl'){const n=i>=0?(S.hands[i]||[]).length:0;if(S.phase==='play'&&n>=1&&n<=2)declare(i,d.s==='sure'?'sure':'unsure')}}
-function declare(i,s){const n=(S.hands[i]||[]).length;S.decl=S.decl||{};S.decl[i]={s,n};S.ann={i,s,n,at:now()}}
+ else if(t==='rx'){if(EMO.includes(d.e)){const id=/^[a-z0-9]{4,12}$/.test(d.id)?d.id:Math.random().toString(36).slice(2,10);S.rx={w:who,e:d.e,at:now(),id};/* rx alone is kept for older pages */S.rxs=(Array.isArray(S.rxs)?S.rxs:[]).concat([{id,k,w:who,e:d.e}]).slice(-8)}}}
+/* Sure = certain to go out without anyone else's help: every card fits now, or will once the player's own other card is down.
+   Piles only grow and only the holder can play these cards, so Sure can never turn back into Not sure. */
+function isSure(i){const h=(S.hands[i]||[]).slice(),rows={...S.rows};for(let k;(k=h.findIndex(c=>{const{r,s}=pc(c),w=rows[s];return r===7?!w:!!w&&(r===w[0]-1||r===w[1]+1)}))>=0;){const{r,s}=pc(h[k]),w=rows[s];rows[s]=w?[Math.min(w[0],r),Math.max(w[1],r)]:[7,7];h.splice(k,1)}return!h.length}
+/* the game makes everyone's calls: on reaching 2 cards and 1 card, and out of turn when someone's play unblocks a Not-sure player */
+function autoCalls(){S.decl=S.decl||{};S.anns=Array.isArray(S.anns)?S.anns:[];S.seats.forEach((x,i)=>{const n=(S.hands[i]||[]).length;if(n<1||n>2)return;const s=isSure(i)?'sure':'unsure',d=S.decl[i],count=!d||d.n!==n;if(!count&&d.s===s)return;S.decl[i]={s,n};if(!count&&s!=='sure')return;
+ const a={id:[S.round,S.mv||0,i,n,s].join('-'),i,s,n,now:!count,at:now()};S.ann=a;/* ann alone is kept for older pages */S.anns=S.anns.concat([a]).slice(-8)})}
 function hostDo(a,v){if(!isHost||!S)return;
  if(a==='bot'){if(S.seats.length>=8||S.phase!=='lobby')return;const used=new Set(S.seats.map(x=>x.name));S.seats.push({k:'bot'+Date.now(),name:(BOTN.find(n=>!used.has(n+' (AI)'))||'Bot')+' (AI)',bot:true});S.scores.push(0)}
  else if(a==='rm'){if(S.phase!=='lobby')return;S.seats.splice(v,1);S.scores.splice(v,1)}
@@ -232,8 +234,8 @@ function hostTick(){if(!hostRef||!loaded)return;hostRef.transaction(cur=>{const 
 function onQueued(snap){const a=snap.val()||{};snap.ref.remove();if(!isHost)return;const k=clip(a.k);if(!k)return;const d=a.d&&typeof a.d==='object'?a.d:{},nk=clip(a.nick);
  if(a.t==='nick'){const i=seatOf(k);if(i>=0&&nk&&!S.seats[i].bot)S.seats[i].name=nk}
  else if(a.t==='leave')leaveSeat(k);
- else if(['join','mv','pass','ch','rx','decl'].includes(a.t))apply(k,a.t,{...d,nick:nk});else return;commit()}
-function becomeHost(){isHost=true;got=true;netStatus('');S=remoteS&&Array.isArray(remoteS.seats)?clone(remoteS):fresh();S.chat=S.chat||[];S.set=cfg();if(S.phase==='play')S.turnAt=now();S.host=nick||'Host';
+ else if(['join','mv','pass','ch','rx'].includes(a.t))apply(k,a.t,{...d,nick:nk});else return;commit()}
+function becomeHost(){isHost=true;got=true;netStatus('');S=remoteS&&Array.isArray(remoteS.seats)?clone(remoteS):fresh();S.chat=S.chat||[];S.set=cfg();S.anns=Array.isArray(S.anns)?S.anns:[];if(S.phase==='play'){S.turnAt=now();autoCalls()}S.host=nick||'Host';
  hostRef.onDisconnect().remove();actsRef.on('child_added',onQueued);
  if(ls.get('sl.autoseat.'+code)==='1'){ls.set('sl.autoseat.'+code,'');if(seatOf(pid)<0)apply(pid,'join',{nick})}
  keepAwake();commit()}
@@ -296,14 +298,23 @@ const audio=()=>{actx=actx||new (window.AudioContext||window.webkitAudioContext)
 function tones(list,type='sine',vol=.3,len=.6){if(!bellOn)return;try{const x=audio(),t0=Date.now(),go=()=>{const t=x.currentTime;list.forEach(([f,d,l=len])=>{const o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(vol,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+l);o.connect(g).connect(x.destination);o.start(t+d);o.stop(t+d+l+.1)})};if(x.state==='running')go();else x.resume().then(()=>{if(Date.now()-t0<400)go()}).catch(()=>{})}catch(e){}}
 const chime=()=>{tones([[784,0],[1175,.16]],'sine',.2,.5);if(navigator.vibrate)try{navigator.vibrate([60,50,60])}catch(e){}};
 const softS=()=>tones([[587,0,.22],[880,.07,.3]],'sine',.14),wrongS=()=>tones([[311,0,.22],[233,.2,.45]],'triangle',.26);
+const playS=()=>tones([[1175,0,.1]],'sine',.07),passS=()=>tones([[247,0,.09],[196,.08,.12]],'triangle',.11);
 const buzz=()=>tones([[170,0],[130,.16]],'square',.16,.2),tickS=()=>tones([[1050,0]],'square',.09,.06);
 function bad(el,m){const r=el.getBoundingClientRect(),x=document.createElement('div');x.className='bad';x.textContent='✗';x.style.cssText=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;document.body.appendChild(x);setTimeout(()=>x.remove(),800);buzz();if(navigator.vibrate)try{navigator.vibrate(90)}catch(e){}if(m)toast(m)}
 let bellOn=ls.get('sl.bell')!=='0',actx=null,prevCnt=null,prevRound=-1;
 const ding=()=>tones([[880,0],[1320,.18]],'sine',.35,1.2);
-function bellCheck(){if(S.phase!=='play'){prevCnt=null;return}const cnt=S.seats.map((x,i)=>(S.hands[i]||[]).length);if(prevCnt&&prevRound===S.round){const hit=cnt.findIndex((n,i)=>n===2&&prevCnt[i]>2);if(hit>=0){if(bellOn)ding();toast('🔔 '+nameOf(hit)+' has only 2 cards left!')}}prevCnt=cnt;prevRound=S.round}
+/* only under a host on an older page, which doesn't make the calls itself */
+function bellCheck(){if(S.phase!=='play'||Array.isArray(S.anns)){prevCnt=null;return}const cnt=S.seats.map((x,i)=>(S.hands[i]||[]).length);if(prevCnt&&prevRound===S.round){const hit=cnt.findIndex((n,i)=>n===2&&prevCnt[i]>2);if(hit>=0){ding();toast('🔔 '+nameOf(hit)+' has only 2 cards left!')}}prevCnt=cnt;prevRound=S.round}
 const chipBadge=i=>{if(S.phase!=='play')return'';const n=(S.hands[i]||[]).length;if(n<1||n>2)return'';const d=(S.decl||{})[i];if(d&&d.n===n)return`<span class="${d.s}">${d.s==='sure'?'Sure':'Not sure'}</span>`;return`<span class="two">${n} left!</span>`};
-let lastAnn=0,lastChat=null,lastHist='',unread=0;
-function bubble(html){const b=document.createElement('div');b.className='bub';b.innerHTML=html;const box=$('bubbles');box.appendChild(b);while(box.children.length>2)box.firstChild.remove();setTimeout(()=>b.remove(),5100)}
+let lastChat=null,lastHist='',unread=0;
+function bubble(html,key){const b=document.createElement('div');b.className='bub';b.innerHTML=html;const box=$('bubbles');if(key)for(const o of[...box.children])if(o.dataset.k===key)o.remove();b.dataset.k=key||'';box.appendChild(b);while(box.children.length>2)box.firstChild.remove();setTimeout(()=>b.remove(),5100)}
+/* one notice per player: a newer call replaces the older one; shown once the card has landed */
+const annSeen=new Set();let annReady=false;
+function callCheck(){if(!got)return;const l=(Array.isArray(S.anns)?S.anns:[]).slice();if(S.ann&&!S.ann.id)l.push({...S.ann,id:'o'+S.ann.at});let k=0;
+ for(const a of l){if(annSeen.has(a.id))continue;annSeen.add(a.id);if(!annReady)continue;const rd=S.round;
+  setTimeout(()=>{if(!S||S.phase!=='play'||S.round!==rd||!S.seats[a.i])return;const me=a.i===seatOf(myKey),who=`<b>${me?'You':esc(nameOf(a.i))}</b>`,sure=a.s==='sure';
+   bubble(a.now?`🔔 ${who} ${me?'are':'is'} now <span class="cs">SURE!</span>`:`🔔 ${who}: ${a.n} card${a.n>1?'s':''} left — <span class="${sure?'cs':'cn'}">${sure?'Sure':'Not sure'}</span>`,'call'+a.i);sure?ding3():ding()},Math.max(0,flash?flash.until-Date.now()-500:0)+700*k++)}
+ annReady=true}
 const ding3=()=>tones([[988,0],[1319,.12],[1760,.24]],'triangle');
 
 /* changes on every play or pass (hist itself is capped, so its length is not enough) */
@@ -313,7 +324,7 @@ let tickSec=-1,flash=null;
 const live=()=>!flash||Date.now()>=flash.until;
 function flashMove(){const l=(S.hist||[]).slice(-1)[0],k=moveKey();if(k===flashMove.k)return;const was=flashMove.k;flashMove.k=k;if(!was||!got)return;if(!l||S.phase==='lobby'){flash=null;return}
  const au=S.last&&S.last.i===l.i?S.last.auto:'',who=l.i===seatOf(myKey)?'You':nameOf(l.i),p=l.c==='pass';
- if(!p&&!OKC.test(l.c))return;flash={i:l.i,c:l.c,au,at:Date.now(),cls:p?'ps':'ok',tx:who+(p?' passed':' played '+RN[pc(l.c).r]+SYM[pc(l.c).s])+(au==='time'?' — time’s up':au==='away'?' (AI stood in)':''),until:Date.now()+(S.phase==='over'?finMs():p?SETTLE.pass:SETTLE.play)};{const f=flash;setTimeout(()=>{if(S&&flash===f)render()},f.until-Date.now()+30)}if(p)stampP={i:l.i,at:Date.now()};if(l.i===seatOf(myKey))(p?wrongS:softS)()}
+ if(!p&&!OKC.test(l.c))return;flash={i:l.i,c:l.c,au,at:Date.now(),cls:p?'ps':'ok',tx:who+(p?' passed':' played '+RN[pc(l.c).r]+SYM[pc(l.c).s])+(au==='time'?' — time’s up':au==='away'?' (AI stood in)':''),until:Date.now()+(S.phase==='over'?finMs():p?SETTLE.pass:SETTLE.play)};{const f=flash;setTimeout(()=>{if(S&&flash===f)render()},f.until-Date.now()+30)}if(p)stampP={i:l.i,at:Date.now()};(l.i===seatOf(myKey)?p?wrongS:softS:p?passS:playS)()}
 /* seats around the felt: you at the bottom right, then clockwise — bottom row leftwards, top row rightwards */
 function ring(){const n=S.seats.length,me=Math.max(0,seatOf(myKey)),o=S.seats.map((x,k)=>(me+k)%n),nb=Math.floor(n/2);return{bot:o.slice(0,nb).reverse(),top:o.slice(nb)}}
 const isUp=x=>x.bot||online.has(x.k)||x.k===myKey;
@@ -382,20 +393,17 @@ function render(){if(!S)return;
  tickUI();
  $('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
  {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';const au=S.last&&S.last.i===hl.i&&S.last.auto;pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?(au==='time'?'Time’s up — no card fits':au?'Your turn was passed — no card fits':'You passed'):esc(nameOf(hl.i))+(au==='time'?' ran out of time':' had no card')}</small></div>`;clearTimeout(pz.t);pz.t=setTimeout(()=>pz.classList.remove('show'),me?3400:1800);void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
- if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
+ callCheck();
  {const ch=S.chat||[],mx=ch.reduce((a,c)=>Math.max(a,c.at||0),0);if(lastChat===null){if(got)lastChat=mx}else if(mx>lastChat){for(const c of ch.filter(c=>c.at>lastChat).slice(-3)){bubble(`<b>${esc(c.w)}</b>: ${esc(c.t)}`);if($('chatpanel').hidden)unread++}lastChat=mx;$('unread').textContent=unread?String(unread):''}}
- const dp=$('declp');const myn=mine>=0?(S.hands[mine]||[]).filter(c=>OKC.test(c)).length:0,md=(S.decl||{})[mine];
- const dh=S.phase==='play'&&mine>=0&&myn>=1&&myn<=2&&!(md&&md.n===myn)?`<div class="decl"><b>You have ${myn} card${myn>1?'s':''} left — call it!</b><button data-a="decl" data-s="sure">Sure ✅</button><button data-a="decl" data-s="unsure">Not sure 🤔</button></div>`:'';
- if(dh!==render.dh){render.dh=dh;dp.innerHTML=dh;if(dh){if(document.activeElement!==$('msg'))$('chatpanel').hidden=true;setTimeout(()=>{try{$('me').scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},150)}}
  document.body.classList.toggle('playing',S.phase==='play'||fin());document.querySelector('.felt').classList.toggle('final',fin());
  const hd=$('hand');hd.className='hand';{const mt=S.phase==='play'&&mine>=0&&S.turn===mine&&live();$('me').classList.toggle('mine',mt);document.querySelector('.felt').classList.toggle('mine',mt)}
- {const pk=S.phase==='play'?S.round:0;if(pk&&pk!==render.pk&&got){const go=()=>setTimeout(()=>{try{const cl=!!render.dh;(cl?$('me'):document.querySelector('.felt')).scrollIntoView({block:cl?'nearest':'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}},100);/* late fonts change the header height */Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,1500))]).then(go,go)}render.pk=pk}
+ {const pk=S.phase==='play'?S.round:0;if(pk&&pk!==render.pk&&got){const go=()=>setTimeout(()=>{try{document.querySelector('.felt').scrollIntoView({block:'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}},100);/* late fonts change the header height */Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,1500))]).then(go,go)}render.pk=pk}
  {const tk=S.phase==='play'&&mine>=0&&S.turn===mine&&live()?moveKey():'';if(tk&&tk!==render.tk&&got){chime();setTimeout(()=>{try{$('me').scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},900)}render.tk=tk}
  if((S.phase==='play'||fin())&&mine>=0){const my=(S.hands[mine]||[]).filter(c=>OKC.test(c)).slice().sort((a,b)=>SU.indexOf(pc(a).s)-SU.indexOf(pc(b).s)||pc(a).r-pc(b).r);
   const turn=S.phase==='play'&&S.turn===mine&&live(),hint=hintsOn();hd.classList.add('mine');if(turn)hd.classList.add('turn');if(hint)hd.classList.add('hint');let ps=null;
   hd.innerHTML=my.map(c=>{const s=pc(c).s,g=ps&&ps!==s?'<span class="gap"></span>':'';ps=s;const cls=c===pend?'pend':hint&&turn&&!pend&&legal(c)?'ok':'';return g+(turn&&!pend?card(c,cls).replace('<span','<span role="button" tabindex="0" data-a="play"'):card(c,cls))}).join('')}
  else if(S.phase==='play')hd.innerHTML='<p class="note">You’re watching this round. Seats open between rounds.</p>';else hd.innerHTML='';
- {const nh=mine>=0?(S.hands[mine]||[]).length:9;$('board').style.setProperty('--x',S.phase==='play'&&nh>2&&hd.offsetHeight<90?'56px':'0px')}/* not at 1–2 cards: the Sure / Not sure buttons need that space */
+ $('board').style.setProperty('--x',(S.phase==='play'||fin())&&hd.offsetHeight<90?'56px':'0px');
  let m='';
  if(S.phase==='lobby'){m=`<div class="panel"><h2>The table</h2><ol class="seats">${S.seats.map((x,i)=>`<li><b>${esc(x.name)}${i===mine?' (you)':''}</b>${x.bot?'<span class="tag">AI</span>':''}${isHost?`<button class="x" data-a="rm" data-i="${i}" aria-label="Remove ${esc(x.name)}">Remove</button>`:''}</li>`).join('')||'<li class="note">Nobody seated yet.</li>'}</ol>
   <div class="btns">${mine<0?`<button data-a="join" ${n>=8?'disabled':''}>Take a seat</button>`:''}${isHost?`<button class="alt" data-a="bot" ${n>=8?'disabled':''}>Add AI player</button><button data-a="deal" ${n<3?'disabled':''}>Deal cards</button>${S.round>0?'<button class="alt" data-a="reset">New game (clear scores)</button>':''}`:''}<button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>
@@ -457,7 +465,7 @@ function onAct(b){const a=b.dataset.a;if(a==='play'||a==='pass'){if(pend||!S||S.
  else if(a==='newtable'){if(Date.now()-(onAct.sure||0)>5000){onAct.sure=Date.now();toast('Tap again to confirm — you’ll leave this table and get a new link');return}onAct.sure=0;newTable()}
  else if(a==='copy'){const l=$('ilink').textContent;(navigator.clipboard?navigator.clipboard.writeText(l):Promise.reject()).then(()=>toast('Link copied — paste it in WhatsApp'),()=>toast('Press and hold the link to copy it'))}
  else if(a==='rx'){if(!S||Date.now()-rxMine<250)return;rxMine=Date.now();const id=Math.random().toString(36).slice(2,10).padEnd(6,'0'),e=b.dataset.e;rxSeen.add(id);react({id,k:pid,w:nick,e});act('rx',{e,id})}
- else if(a==='decl'){const s=b.dataset.s;act('decl',{s});$('declp').innerHTML='';setTimeout(()=>{if(S){render.dh='';render()}},4000)}
+
  else if(a==='chatlog'){const p=$('chatpanel');p.hidden=!p.hidden;if(!p.hidden){$('msg').focus({preventScroll:true});unread=0;$('unread').textContent='';const cl=$('chatlog');cl.scrollTop=cl.scrollHeight}}
  else if(a==='chatx'){$('chatpanel').hidden=true}else hostDo(a,+b.dataset.i)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!e.target.closest('#chatpanel,#chatb'))$('chatpanel').hidden=true;if(b)onAct(b)});

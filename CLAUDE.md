@@ -13,7 +13,7 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 - Each suit is built from its 7: up to K and down to A, one card at a time. Any 7 can start its suit (after 7♥ is down).
 - If you can play, you must. If you cannot, you pass.
 - First player out wins the round. Everyone else scores the cards left in hand: A=1, 2–10 face value, J=11, Q=12, K=13. Lowest running total leads.
-- At 2 cards and again at 1 card, a player calls "Sure" or "Not sure".
+- At 2 cards and again at 1 card, the game calls "Sure" or "Not sure" for the player (automatic, AI players too). Sure = certain to go out without anyone else's help: every card fits now, or will once the player's own other card is down. When someone's play unblocks a Not-sure player, the game announces "now SURE" out of turn.
 
 ## Architecture
 
@@ -36,7 +36,7 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 - Solitaire-style piles: 4 suit columns, A at the top down to K, each card showing its top strip, the highest card fully visible, and the 7s aligned.
 - Fly-in animation from the player's chip. The last-played card is outlined in the player's color with a name tag. Per-seat colors.
 - Board with player chips around it on top, then the turn label and Pass, your hand, the points line, the Recent line and the invite box.
-- Bell at 2 cards, the Sure/Not-sure call banner and chime, and a big PASS stamp across the board (small one for other players).
+- Automatic Sure/Not-sure notice with bell (one notice per player, newer replaces older) and chip badge, and a big PASS stamp across the board (small one for other players).
 - Sticky slim header with 🔊 (mutes every game sound on that phone). Slim emoji line fixed at the bottom: one tap sends a reaction; 💬 opens the text box and history at the top of the screen (unread count on it). Chat bubbles and messages show at the top.
 - Round results: scores table plus each player's leftover cards.
 - Leave table, Start my own table, New game (clear scores), Change players, AI players (Aaji, Kaka…).
@@ -77,7 +77,7 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 4. Turn timer default is 30 s. The countdown and ring only show for the last 15 s.
 5. Gentle tone when you play a card, "wrong answer" tone when you pass, heard only on your own phone.
 6. One 🔊/🔇 button replaces the Bell button and silences all game sounds (vibration is not affected).
-7. **Nothing may ever cover the Sure / Not sure buttons.** They sit in the page flow above the hand; messages go to the top of the screen.
+7. ~~Nothing may ever cover the Sure / Not sure buttons.~~ The buttons are gone (A.5); messages still go to the top of the screen.
 
 ### Phase A.3 — third round of family feedback (done)
 
@@ -91,6 +91,12 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 - A reaction flies from the sender's chip (lobby: their tile; spectators: bottom center) to the middle of the board with a trail, the sender's name in their color, and a small badge on their chip for 4.5 s. Reduced motion: it just appears at the chip.
 - State: `rxs`, the last 8 reactions `{id, k, w, e}`. Each phone shows every id once. **Never compare host timestamps with a phone's own clock to decide whether to show something** (use ids, or `now()` on both sides). `rx` is still written for older pages.
 - Anything drawn over the board goes in `#fx`; inside the felt it can end up under the cards (they have z-index).
+
+### Phase A.5 — automatic calls (done)
+
+1. The host makes all Sure / Not sure calls (`isSure`, `autoCalls`) after every play; manual buttons are gone and `decl` actions from older pages are ignored. State: `decl` (current call per seat) and `anns`, the last 8 announcements `{id, i, s, n, now}` (`ann` is still written for older pages). Sure never turns back into Not sure.
+2. One notice per player, shown once the card has landed, replacing that player's previous notice. No separate "only 2 cards left" message.
+3. Others hear a very soft chime on a play and a quick low sound on a pass. The player keeps the gentle tone and the "wrong answer" tone.
 
 ### Phase B — cards and players
 
