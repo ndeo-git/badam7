@@ -158,10 +158,10 @@ const clip=s=>String(s||'').trim().slice(0,18);
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 let pid=ls.get('sl.pid');if(!pid){pid='p'+Math.random().toString(36).slice(2,10);ls.set('sl.pid',pid)}
 let nick=ls.get('sl.nick')||'',myKey=pid,S=null,isHost=false,got=false,online=new Set(),pend=null,lastRx=0,myN=0,msg='';
-const DEF={hints:true,think:2,timer:20};
+const DEF={hints:true,hintOv:false,think:2,timer:20};
 const fresh=()=>({phase:'lobby',seats:[],hands:[],rows:{S:null,H:null,D:null,C:null},turn:0,turnAt:0,first:true,last:null,log:'',scores:[],lastPts:[],round:0,lastBy:{},hist:[],seq:{},chat:[],rx:null,host:'',mv:0,set:{...DEF}});
 const THINK=[1,2,3,4,5],TIMER=[0,15,20,30,45,60],cfg=()=>({...DEF,...(S&&S.set||{})});
-const hintsOn=()=>{const o=ls.get('sl.hints');return o==='1'?true:o==='0'?false:cfg().hints!==false};
+const hintsOn=()=>{const o=cfg().hintOv?ls.get('sl.hints'):null;return o==='1'?true:o==='0'?false:cfg().hints!==false};
 const clone=o=>JSON.parse(JSON.stringify(o));
 
 function legal(c){if(!OKC.test(c))return false;const{r,s}=pc(c);if(S.first)return c==='7H';const row=S.rows[s];if(r===7)return!row;return!!row&&(r===row[0]-1||r===row[1]+1)}
@@ -196,7 +196,7 @@ function hostDo(a,v){if(!isHost||!S)return;
  if(a==='bot'){if(S.seats.length>=8||S.phase!=='lobby')return;const used=new Set(S.seats.map(x=>x.name));S.seats.push({k:'bot'+Date.now(),name:(BOTN.find(n=>!used.has(n+' (AI)'))||'Bot')+' (AI)',bot:true});S.scores.push(0)}
  else if(a==='rm'){if(S.phase!=='lobby')return;S.seats.splice(v,1);S.scores.splice(v,1)}
  else if(a==='deal')deal();
- else if(a==='set'){if(S.phase==='play')return;const{f,v:x}=v;if(f==='hints')S.set={...cfg(),hints:x===1};else if(f==='think'&&THINK.includes(x))S.set={...cfg(),think:x};else if(f==='timer'&&TIMER.includes(x))S.set={...cfg(),timer:x};else return}
+ else if(a==='set'){const{f,v:x}=v;if(f==='hints'||f==='hintOv')S.set={...cfg(),[f]:x===1};else if(S.phase==='play')return;/* pace settings only between rounds */else if(f==='think'&&THINK.includes(x))S.set={...cfg(),think:x};else if(f==='timer'&&TIMER.includes(x))S.set={...cfg(),timer:x};else return}
  else if(a==='lobby'){S.phase='lobby';emptyBoard();S.log='Back to the lobby'}
  else if(a==='reset'){S.phase='lobby';emptyBoard();S.scores=S.seats.map(()=>0);S.round=0;S.log='New game — scores cleared'}
  else return;commit()}
@@ -321,9 +321,12 @@ function stopShow(){if(show)show.tm.forEach(clearTimeout);show=null;$('show').hi
 function closeShow(){stopShow();render();const m=$('mid');try{m.scrollIntoView({block:'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}}
 function confetti(){if(rm.matches)return;for(let n=0;n<70;n++){const d=document.createElement('i');d.className='conf';d.style.cssText=`left:${Math.random()*100}vw;background:${PCOL[n%8]}`;document.body.appendChild(d);
  const an=d.animate([{transform:'none',opacity:1},{transform:`translate(${(Math.random()-.5)*220}px,${innerHeight+60}px) rotate(${(Math.random()-.5)*1800}deg)`,opacity:.9}],{duration:2400+Math.random()*2200,delay:Math.random()*1400,easing:'cubic-bezier(.25,.5,.6,1)',fill:'backwards'});an.onfinish=()=>d.remove()}}
-function setPanel(){const o=cfg(),tm=v=>v?v+' s':'Off';if(!isHost)return`<p class="note">Table settings: hints ${o.hints?'on':'off'} · AI thinks ${o.think} s · turn timer ${o.timer?o.timer+' s':'off'}</p>`;
+let hsOpen=false;
+function setPanel(hintsOnly){const o=cfg(),tm=v=>v?v+' s':'Off';if(!isHost)return`<p class="note">Table settings: hints ${o.hints?'on':'off'}${o.hintOv?' (you can change yours)':''} · AI thinks ${o.think} s · turn timer ${o.timer?o.timer+' s':'off'}</p>`;
  const row=(l,f,vs,cur,nm)=>`<div class="srow" role="group" aria-label="${l}"><span>${l}</span>${vs.map(v=>`<button type="button" data-a="set" data-f="${f}" data-v="${v}" aria-pressed="${v===cur}">${nm(v)}</button>`).join('')}</div>`;
- return`<div class="set"><h3>Table settings</h3>${row('Hints (each player can override)','hints',[1,0],o.hints?1:0,v=>v?'On':'Off')}${row('AI think time','think',THINK,o.think,v=>v+' s')}${row('Turn timer','timer',TIMER,o.timer,tm)}</div>`}
+ const yn=v=>v?'Yes':'No',hr=row('Hints','hints',[1,0],o.hints?1:0,v=>v?'On':'Off')+row('Players can change hints','hintOv',[0,1],o.hintOv?1:0,yn);
+ if(hintsOnly)return`<div class="panel">${hr}</div>`;
+ return`<div class="set"><h3>Table settings</h3>${hr}${row('AI think time','think',THINK,o.think,v=>v+' s')}${row('Turn timer','timer',TIMER,o.timer,tm)}</div>`}
 function render(){if(!S)return;
  if(got){const ph=S.phase;if(ph==='over'&&render.ph==='play')startShow();else if(show&&(ph!=='over'||show.round!==S.round))stopShow();render.ph=ph}
  const mine=seatOf(myKey),n=S.seats.length,last=S.last&&S.last.c;
@@ -339,7 +342,7 @@ function render(){if(!S)return;
  if(S.phase==='lobby')st=n<3?'Waiting for players — need at least 3':n+' at the table — ready to deal';
  else if(S.phase==='over')st=esc(nameOf(S.winner))+' wins round '+S.round+'!';
  if(show)st='';$('status').innerHTML=st;$('status').hidden=!st;flashMove();banner();
- {const my=S.phase==='play'&&mine>=0,tn=my&&S.turn===mine,o=ls.get('sl.hints');$('bar').innerHTML=my?`<button type="button" id="passb" data-a="pass" class="${tn&&!pend&&hintsOn()&&!moves(mine).length?'need':''}" ${tn&&!pend?'':'disabled'}>Pass</button><button type="button" class="alt hintb" data-a="hints">💡 Hints: ${o==='1'?'on':o==='0'?'off':'table ('+(hintsOn()?'on':'off')+')'}</button>`:''}
+ {const my=S.phase==='play'&&mine>=0,tn=my&&S.turn===mine,o=ls.get('sl.hints');$('bar').innerHTML=my?`<button type="button" id="passb" data-a="pass" class="${tn&&!pend&&hintsOn()&&!moves(mine).length?'need':''}" ${tn&&!pend?'':'disabled'}>Pass</button>${cfg().hintOv?`<button type="button" class="alt hintb" data-a="hints">💡 Hints: ${o==='1'?'on':o==='0'?'off':'table ('+(hintsOn()?'on':'off')+')'}</button>`:''}`:''}
  $('log').innerHTML=S.phase==='play'&&(S.hist||[]).length?'Recent: '+S.hist.slice().reverse().map(h=>esc(nameOf(h.i))+' '+(h.c==='pass'?'<em>passed</em>':OKC.test(h.c)?`<b class="${red(pc(h.c).s)?'rd':''}">${RN[pc(h.c).r]}${SYM[pc(h.c).s]}</b>`:'')).join(' · '):'';bellCheck();
  {const hk=moveKey(),hl=(S.hist||[]).slice(-1)[0];if(hk!==lastHist){const was=lastHist;lastHist=hk;if(was&&got&&hl&&hl.c==='pass'&&S.phase==='play'){const me=hl.i===mine,pz=$('passed');pz.className=me?'':'small';const au=S.last&&S.last.i===hl.i&&S.last.auto;pz.innerHTML=`<div class="stamp"><b>PASS</b><small>${me?(au==='time'?'Time’s up — no card fits':au?'Your turn was passed — no card fits':'You passed'):esc(nameOf(hl.i))+(au==='time'?' ran out of time':' had no card')}</small></div>`;clearTimeout(pz.t);pz.t=setTimeout(()=>pz.classList.remove('show'),me?3400:1800);void pz.offsetWidth;pz.classList.add('show');if(me&&navigator.vibrate)try{navigator.vibrate([80,60,120])}catch(e){}}}}
  if(S.ann&&S.ann.at>lastAnn){const fresh=lastAnn>0||got;lastAnn=S.ann.at;if(fresh&&Date.now()-S.ann.at<15000&&S.seats[S.ann.i]){bubble(`🔔 <b>${esc(nameOf(S.ann.i))}</b>: ${S.ann.n} card${S.ann.n>1?'s':''} left — ${S.ann.s==='sure'?'SURE!':'not sure'}`);if(bellOn)ding3()}}
@@ -362,7 +365,8 @@ function render(){if(!S)return;
   m=`<div class="panel"><h2>Round ${S.round} scores</h2><table><thead><tr><th>Player</th><th class="n">Left</th><th class="n">This round</th><th class="n">Total</th></tr></thead><tbody>${ord.map(i=>`<tr><td>${esc(nameOf(i))}${i===S.winner?' 🏆':''}</td><td class="n">${(S.hands[i]||[]).length}</td><td class="n">${S.lastPts[i]||0}</td><td class="n"><b>${S.scores[i]||0}</b></td></tr>`).join('')}</tbody></table>
   <h2 class="lefth">Cards left in hand</h2><div class="left">${ord.map(i=>{const h=sortH(S.hands[i]);return`<div class="lrow" style="border-left:5px solid ${pcol(i)}"><b>${esc(nameOf(i))}</b><span class="minis">${h.length?minis(h):'<em>Went out first 🏆</em>'}</span><small>${S.lastPts[i]||0} pts</small></div>`}).join('')}</div>
   ${isHost?'<div class="btns"><button data-a="deal">Deal next round</button><button class="alt" data-a="lobby">Change players</button><button class="alt" data-a="reset">New game</button></div>':'<p class="note">Waiting for the host to deal the next round.</p>'}${setPanel()}<div class="btns"><button class="alt" data-a="newtable">Start my own table</button>${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div></div>`}
- else m=`<div class="btns">${isHost?'<button class="x" data-a="lobby">Stop round</button>':''}${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>`;
+ else m=`<div class="btns">${isHost?'<button class="x" data-a="lobby">Stop round</button><button class="x" data-a="hs" aria-expanded="'+hsOpen+'">💡 Hint settings</button>':''}${mine>=0?'<button class="x" data-a="leave">Leave table</button>':''}</div>${isHost&&hsOpen?setPanel(true):''}`;
+ if(S.phase!=='play')hsOpen=false;
  $('mid').innerHTML=m;
  const cl=$('chatlog'),atEnd=cl.scrollHeight-cl.scrollTop-cl.clientHeight<30;
  cl.innerHTML=(S.chat||[]).map(c=>`<p><b>${esc(c.w)}:</b> ${esc(c.t)}</p>`).join('')||'<p class="note">Chat with the table here.</p>';if(atEnd)cl.scrollTop=cl.scrollHeight;
@@ -381,7 +385,8 @@ function onAct(b){const a=b.dataset.a;if(a==='play'||a==='pass'){if(pend||!S||S.
   if(!isHost){const p=pend=a==='pass'?'pass':c;clearTimeout(act.p);act.p=setTimeout(()=>{if(pend===p){pend=null;render()}},6000)}if(a==='pass')act('pass',{n:S.mv||0});else act('mv',{c,n:S.mv||0});render()}
  else if(a==='showtap'){if(show&&show.open&&show.k<show.ord.length)revealAll()}
  else if(a==='showx')closeShow();
- else if(a==='hints'){const o=ls.get('sl.hints');ls.set('sl.hints',o==='1'?'0':o==='0'?'':'1');render()}
+ else if(a==='hs'){hsOpen=!hsOpen;render()}
+ else if(a==='hints'){if(!cfg().hintOv)return;const o=ls.get('sl.hints');ls.set('sl.hints',o==='1'?'0':o==='0'?'':'1');render()}
  else if(a==='set')hostDo('set',{f:b.dataset.f,v:+b.dataset.v})
  else if(a==='join'){if(!nick){toast('Type your name at the top first');$('nick').focus();return}act('join',{})}
  else if(a==='host')goTable(newCode(),true);
