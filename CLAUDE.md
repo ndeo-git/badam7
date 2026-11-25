@@ -34,8 +34,8 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 ## Current features (keep working)
 
 - Solitaire-style piles: 4 suit columns, A at the top down to K, each card showing its top strip, the highest card fully visible, and the 7s aligned.
-- Fly-in animation from the player's tile. The last-played card is outlined in the player's color with a name tag. Per-seat colors.
-- Board on top, then the turn status, your hand, player tiles, the Recent line and the invite box.
+- Fly-in animation from the player's chip. The last-played card is outlined in the player's color with a name tag. Per-seat colors.
+- Board with player chips around it on top, then the turn label and Pass, your hand, the points line, the Recent line and the invite box.
 - Bell at 2 cards, the Sure/Not-sure call banner and chime, and a big PASS stamp across the board (small one for other players).
 - Chat and emoji dock fixed at the bottom, chat bubbles at the top, 💬 history panel with unread count. (Chat dock space is a known compromise; leave it for now.)
 - Round results: scores table plus each player's leftover cards.
@@ -56,15 +56,16 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 3. ~~**Turn banner at the top:**~~ **Removed in A.1**, replaced by the player chips. Was: red "<name>'s turn" with the countdown → green "<name> played 8♥" for ~1.5 s → red for the next player.
 4. **End-of-round show:** fanfare and a winner banner with confetti, then players revealed one at a time in ascending points, with their leftover cards.
 
-### Phase A.1 — tweaks from the first family test (next)
+### Phase A.1 — tweaks from the first family test (done)
 
 1. **The top turn banner is removed.** Mini player chips sit around the edge of the card table (felt) instead, split across the top and bottom edges, up to 8 players.
    - Chip: name (shortened if needed), cards left, player color.
    - On that player's turn the chip border is red, with the turn timer as a ring shrinking around it.
    - Green for ~1.5 s after they play, with the card they played shown on or near the chip. Amber plus the PASS stamp for a pass.
-   - Player tiles below the hand: shrink or remove (to be agreed in the plan).
+   - You are always at the bottom right on your own phone; turns run clockwise (bottom row leftwards, top row rightwards). Bottom row holds half the players, rounded down.
+   - Player tiles are shown in the lobby only. During a round a one-line "Points:" list replaces them.
 2. **"It's your turn" must be unmistakable for the current player:** felt edge glows, hand area highlighted with a "Your turn" label and countdown, soft chime (respects Bell on/off), short vibration where supported. Not distracting for others.
-3. **Host table setting "Players can change hints"** (default: no). When off, the 💡 button is hidden and everyone uses the table's hint setting. Changing it applies immediately.
+3. **Host table setting "Players can change hints"** (default: no). When off, the 💡 button is hidden and everyone uses the table's hint setting. Changing it applies immediately: the host can change the two hint settings mid-round too (Hint settings button). Other settings only between rounds.
 4. **AI going out:** when an AI's turn would play its last card, it plays after ~1 s instead of the think time.
 5. Everything else stays as is. The host can change table settings in the lobby and on the end-of-round screen without losing scores (added in Phase A).
 

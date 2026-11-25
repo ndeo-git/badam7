@@ -71,8 +71,10 @@ header .bell{margin-left:auto;min-height:40px;padding:4px 12px;font-size:14px}he
 .hand.mine .cd{opacity:1;filter:none}
 .hand.mine.turn .cd{cursor:pointer}.hand.mine.turn.hint .cd:not(.ok){opacity:.5}.hand.mine .cd.pend{opacity:.35}
 .felt{scroll-margin-top:8px}#me{scroll-margin:8px 0 calc(116px + env(safe-area-inset-bottom))}
+#me{margin:10px -8px 0;padding:6px 8px;border-radius:16px}#me.mine{background:#c3142d14;box-shadow:inset 0 0 0 3px #d81b34}#me .hand{margin:6px 0 2px}#bar .tl b{font-size:20px;font-weight:800;color:#c3142d}#bar .tl small{display:block;font-size:14px}:root[data-theme=dark] #bar .tl b{color:#ff6b7d}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) #bar .tl b{color:#ff6b7d}}
+.felt.mine::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 4px var(--gold),0 0 18px 4px var(--gold);animation:glow 1.2s ease-in-out infinite alternate}@keyframes glow{from{opacity:.35}}@media(prefers-reduced-motion:reduce){.felt.mine::after{animation:none}}
 #bar{display:flex;gap:8px;align-items:center;min-height:46px}#bar:empty{display:none}#bar .tl{flex:1;line-height:1.2;color:var(--mut);overflow-wrap:anywhere}#passb{flex:none;min-width:96px;background:#c3142d;letter-spacing:.04em}#passb.need{outline:3px solid var(--gold);outline-offset:2px}#bar .hintb{flex:none;min-height:40px;padding:4px 9px;font-size:14px}
-#cd{flex:none;min-width:2.4em;padding:1px 8px;border-radius:999px;background:#b3122a;color:#fff;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}#cd:empty{display:none}#cd.low{background:var(--gold);color:#2a1a00}
+#players:empty{display:none}#cd{display:inline-block;font-size:17px;line-height:1.25;min-width:2.4em;padding:1px 8px;border-radius:999px;background:#b3122a;color:#fff;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}#cd:empty{display:none}#cd.low{background:var(--gold);color:#2a1a00}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .chips{display:flex;justify-content:space-evenly;gap:6px;max-width:640px;margin:0 auto}.chips:empty{display:none}#chT{margin-bottom:10px}#chB{margin-top:10px}
 .chip{position:relative;flex:1 1 0;max-width:150px;padding:3px;border-radius:12px;background:#ffffff30}
@@ -246,7 +248,7 @@ function startTable(){base=db.ref('t/'+code);hostRef=base.child('host');actsRef=
   if(first)hostTick();
   if(!isHost&&st){S=st;got=true;if(pend&&(S.phase!=='play'||S.turn!==seatOf(pid)))pend=null;render()}});
  setInterval(hostTick,5000)}
-function closed(msg){$('chT').innerHTML=$('chB').innerHTML='';isHost=false;stopShow();try{base.child('online/'+pid).remove()}catch(e){}base.off();S=null;$('invite').hidden=true;$('status').textContent=msg;
+function closed(msg){$('me').classList.remove('mine');document.querySelector('.felt').classList.remove('mine');$('chT').innerHTML=$('chB').innerHTML='';isHost=false;stopShow();try{base.child('online/'+pid).remove()}catch(e){}base.off();S=null;$('invite').hidden=true;$('status').textContent=msg;
  $('mid').innerHTML='<div class="panel"><p>Ask the host for a fresh link, or start your own table.</p><div class="btns"><button data-a="host">Start a new table</button></div></div>'}
 async function keepAwake(){if(keepAwake.on)return;keepAwake.on=1;const req=async()=>{try{if(navigator.wakeLock)await navigator.wakeLock.request('screen')}catch(e){}};await req();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')req()})}
 function showInvite(){const link=location.origin+location.pathname+'?t='+code;$('invite').hidden=false;$('ilink').textContent=link;
@@ -288,7 +290,8 @@ function fly(i,c,mine){const chip=document.querySelector(`.chip[data-p="${i}"]`)
  el.style.zIndex=50;const an=el.animate([{transform:`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(.55)`,opacity:.4},{transform:`translate(${dx*.25}px,${dy*.25-30}px) rotate(${rot*.15}deg) scale(1.15)`,opacity:1,offset:.7},{transform:'none',opacity:1}],{duration:750,easing:'cubic-bezier(.2,.75,.25,1)'});
  an.onfinish=()=>{el.style.zIndex=pc(c).r+1};if(chip)chip.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:300})}
 const audio=()=>{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx};
-function tones(list,type='sine',vol=.3,len=.6){if(!bellOn)return;try{const x=audio(),t=x.currentTime;list.forEach(([f,d,l=len])=>{const o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(vol,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+l);o.connect(g).connect(x.destination);o.start(t+d);o.stop(t+d+l+.1)})}catch(e){}}
+function tones(list,type='sine',vol=.3,len=.6){if(!bellOn)return;try{const x=audio(),t0=Date.now(),go=()=>{const t=x.currentTime;list.forEach(([f,d,l=len])=>{const o=x.createOscillator(),g=x.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(vol,t+d+.01);g.gain.exponentialRampToValueAtTime(.001,t+d+l);o.connect(g).connect(x.destination);o.start(t+d);o.stop(t+d+l+.1)})};if(x.state==='running')go();else x.resume().then(()=>{if(Date.now()-t0<400)go()}).catch(()=>{})}catch(e){}}
+const chime=()=>{tones([[784,0],[1175,.16]],'sine',.2,.5);if(navigator.vibrate)try{navigator.vibrate([60,50,60])}catch(e){}};
 const buzz=()=>tones([[170,0],[130,.16]],'square',.16,.2),tickS=()=>tones([[1050,0]],'square',.09,.06);
 function bad(el,m){const r=el.getBoundingClientRect(),x=document.createElement('div');x.className='bad';x.textContent='✗';x.style.cssText=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;document.body.appendChild(x);setTimeout(()=>x.remove(),800);buzz();if(navigator.vibrate)try{navigator.vibrate(90)}catch(e){}if(m)toast(m)}
 let bellOn=ls.get('sl.bell')!=='0',actx=null,prevCnt=null,prevRound=-1;
@@ -318,7 +321,7 @@ function chips(){if(!S||S.phase==='lobby'||!(S.hands||[]).length){if(chipSig){ch
   document.querySelectorAll('.chip .played').forEach(e=>{e.style.animationDelay=-(Date.now()-flash.at)+'ms'});document.querySelectorAll('.chip .pstamp').forEach(e=>{e.style.animationDelay=-(Date.now()-stampP.at)+'ms'})}}
 /* ms left on the current turn's timer, or null when there is no countdown */
 function turnLeft(){const x=S&&S.phase==='play'&&S.seats[S.turn],t=S&&S.set&&S.set.timer;return!x||x.bot||!isUp(x)||!t?null:Math.max(0,Math.min(t*1000,S.turnAt+t*1000-now()))}
-function turnLine(){const x=S.seats[S.turn];if(!x)return'';if(S.turn===seatOf(myKey))return`<b>Your turn</b> <span id="cd" aria-hidden="true"></span>`;return esc(x.name)+(isUp(x)?'’s turn':' is away — AI will play')}
+function turnLine(){const x=S.seats[S.turn];if(!x)return'';if(S.turn===seatOf(myKey))return`<b>Your turn</b> <span id="cd" aria-hidden="true"></span>${hintsOn()?`<small>${moves(S.turn).length?'Tap a glowing card':'No card fits — press Pass'}</small>`:''}`;return esc(x.name)+(isUp(x)?'’s turn':' is away — AI will play')}
 function tickUI(){const say=t=>{if($('turnt').textContent!==t)$('turnt').textContent=t};chips();if(!S||S.phase!=='play'||!S.seats[S.turn]){say(S&&S.phase==='over'&&flash&&Date.now()<flash.until?flash.tx:'');return}
  const me=S.turn===seatOf(myKey),l=turnLeft(),sec=l===null?null:Math.ceil(l/1000),x=S.seats[S.turn];
  say(flash&&Date.now()<flash.until?flash.tx:me?'Your turn':x.name+(isUp(x)?'’s turn':' is away'));
@@ -374,9 +377,9 @@ function render(){if(!S)return;
  {const ch=S.chat||[],mx=ch.reduce((a,c)=>Math.max(a,c.at||0),0);if(lastChat===null){if(got)lastChat=mx}else if(mx>lastChat){for(const c of ch.filter(c=>c.at>lastChat).slice(-3)){bubble(`<b>${esc(c.w)}</b>: ${esc(c.t)}`);if($('chatpanel').hidden)unread++}lastChat=mx;$('unread').textContent=unread?String(unread):''}}
  const dp=$('declp');const myn=mine>=0?(S.hands[mine]||[]).filter(c=>OKC.test(c)).length:0,md=(S.decl||{})[mine];
  dp.innerHTML=S.phase==='play'&&mine>=0&&myn>=1&&myn<=2&&!(md&&md.n===myn)?`<div class="decl"><b>You have ${myn} card${myn>1?'s':''} left — call it!</b><button data-a="decl" data-s="sure">Sure ✅</button><button class="alt" data-a="decl" data-s="unsure">Not sure 🤔</button></div>`:'';
- const hd=$('hand');hd.className='hand';
- {const pk=S.phase==='play'?S.round:0;if(pk&&pk!==render.pk&&got)setTimeout(()=>{try{document.querySelector('.felt').scrollIntoView({block:'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}},100);render.pk=pk}
- {const tk=S.phase==='play'&&mine>=0&&S.turn===mine?moveKey():'';if(tk&&tk!==render.tk&&got)setTimeout(()=>{try{$('me').scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},900);render.tk=tk}
+ const hd=$('hand');hd.className='hand';{const mt=S.phase==='play'&&mine>=0&&S.turn===mine;$('me').classList.toggle('mine',mt);document.querySelector('.felt').classList.toggle('mine',mt)}
+ {const pk=S.phase==='play'?S.round:0;if(pk&&pk!==render.pk&&got){const go=()=>setTimeout(()=>{try{document.querySelector('.felt').scrollIntoView({block:'start',behavior:rm.matches?'auto':'smooth'})}catch(e){}},100);/* late fonts change the header height */Promise.race([document.fonts?document.fonts.ready:0,new Promise(r=>setTimeout(r,1500))]).then(go,go)}render.pk=pk}
+ {const tk=S.phase==='play'&&mine>=0&&S.turn===mine?moveKey():'';if(tk&&tk!==render.tk&&got){chime();setTimeout(()=>{try{$('me').scrollIntoView({block:'nearest',behavior:rm.matches?'auto':'smooth'})}catch(e){}},900)}render.tk=tk}
  if(S.phase==='play'&&mine>=0){const my=(S.hands[mine]||[]).filter(c=>OKC.test(c)).slice().sort((a,b)=>SU.indexOf(pc(a).s)-SU.indexOf(pc(b).s)||pc(a).r-pc(b).r);
   const turn=S.turn===mine,hint=hintsOn();hd.classList.add('mine');if(turn)hd.classList.add('turn');if(hint)hd.classList.add('hint');let ps=null;
   hd.innerHTML=my.map(c=>{const s=pc(c).s,g=ps&&ps!==s?'<span class="gap"></span>':'';ps=s;const cls=c===pend?'pend':hint&&turn&&!pend&&legal(c)?'ok':'';return g+(turn&&!pend?card(c,cls).replace('<span','<span role="button" tabindex="0" data-a="play"'):card(c,cls))}).join('')}
