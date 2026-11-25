@@ -44,17 +44,29 @@ Multiplayer web game so Nikhil can play Satti Lavani (सत्ती लाव�
 
 ## Roadmap
 
-### Phase A — game feel (next)
+### Phase A — game feel (done, live; adjusted by Phase A.1 below)
 
 1. **Pace and hints**
    - Host sets the table defaults in the lobby: **Hints on/off**, **AI think time** (1–5 s, default 2 s) and **Turn timer** (off/15/20/30/45/60 s, default 20 s).
    - Each player can override the hints setting for themselves (stored locally).
    - Hints off: no glow on playable cards. Tapping an invalid card flashes a red ✗ on it and plays an error tone. The card is not played.
    - **Manual Pass button.** No more auto-pass for humans. Pressing Pass while holding a playable card gives a red ✗ and error tone ("must play if you can").
-   - Timer runs out: if the player has no playable card, they pass; if they have one, the AI plays it for them. Show a countdown on the turn banner and tick during the last 5 s.
+   - Timer runs out: if the player has no playable card, they pass; if they have one, the AI plays it for them. Show a countdown (~~on the turn banner~~ see A.1) and tick during the last 5 s, heard only by the player on turn.
 2. **PASS stamp over the passing player's icon**, in addition to the board stamp.
-3. **Turn banner at the top:** red "<name>'s turn" with the countdown → green "<name> played 8♥" for ~1.5 s → red for the next player.
+3. ~~**Turn banner at the top:**~~ **Removed in A.1**, replaced by the player chips. Was: red "<name>'s turn" with the countdown → green "<name> played 8♥" for ~1.5 s → red for the next player.
 4. **End-of-round show:** fanfare and a winner banner with confetti, then players revealed one at a time in ascending points, with their leftover cards.
+
+### Phase A.1 — tweaks from the first family test (next)
+
+1. **The top turn banner is removed.** Mini player chips sit around the edge of the card table (felt) instead, split across the top and bottom edges, up to 8 players.
+   - Chip: name (shortened if needed), cards left, player color.
+   - On that player's turn the chip border is red, with the turn timer as a ring shrinking around it.
+   - Green for ~1.5 s after they play, with the card they played shown on or near the chip. Amber plus the PASS stamp for a pass.
+   - Player tiles below the hand: shrink or remove (to be agreed in the plan).
+2. **"It's your turn" must be unmistakable for the current player:** felt edge glows, hand area highlighted with a "Your turn" label and countdown, soft chime (respects Bell on/off), short vibration where supported. Not distracting for others.
+3. **Host table setting "Players can change hints"** (default: no). When off, the 💡 button is hidden and everyone uses the table's hint setting. Changing it applies immediately.
+4. **AI going out:** when an AI's turn would play its last card, it plays after ~1 s instead of the think time.
+5. Everything else stays as is. The host can change table settings in the lobby and on the end-of-round screen without losing scores (added in Phase A).
 
 ### Phase B — cards and players
 
